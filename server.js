@@ -20,7 +20,7 @@ const ptyProcess = pty.spawn(shell, [], {
     name: 'tty',
     cols: 80,
     rows: 30,
-    cwd: process.env.HOME,
+    cwd: process.env.INIT_CWD,
     env: process.env
 
 });
@@ -38,10 +38,11 @@ io.on('connection', (socket) => {
     console.log("some user connected", socket.id);
 
     //listern custom events gere
-    socket.on('chat message', (msg) => {
+    socket.on('chat_message', (msg) => {
         console.log('Message received:', msg);
-        io.emit('chat message', msg);
- // This line is correct if 'msg' is the command you want to send
+        ptyProcess.write(`${msg}\r`);
+        io.emit('chat_message', msg);
+       // This line is correct if 'sg' is the command you want to send
     });
 
     //spcket disconnection
@@ -50,12 +51,12 @@ io.on('connection', (socket) => {
     });
 
 });
-app.post('/message', (req, res) => {
-    const msg = req.body.message;
-    io.emit('chat message', msg);
-    ptyProcess.write(`${msg}\r`);
-    res.status(200).send({ status: 'Message sent' });
-});
+// app.post('/message', (req, res) => {
+//     const msg = req.body.message;
+//     io.emit('chat message', msg);
+//     ptyProcess.write(`${msg}\r`);
+//     res.status(200).send({ status: 'Message sent' });
+// });
 
 server.listen(PORT, () => {
     console.log(`server listening on port ${PORT}`);
