@@ -7,6 +7,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const app = express();
+const chokidar = require('chokidar');
 app.use(cors());
 const server = http.createServer(app);
 // console.log(server);
@@ -111,8 +112,36 @@ app.get('/files', (req, res) => {
     res.json(fileTree);
 });
 
-function emitFileStructure(){
-    const files=getAllFiles(usersDir,usersDir);
+
+//route that acceots file writer requests to specified path
+app.post('/write-file', (req, res) => {
+    try {
+        const { filePath, content } = req.body;
+        const fullPath = path.join(__dirname, filePath);
+        console.log("made final write path as", fullPath);
+        //write arrived content using fs writer module
+        fs.writeFile(fullPath, content, (error) => {
+            if (error) {
+                return res.status(500).json({ error: 'failed to write file' });
+            }
+            return res.status(200).json({ message: 'File written successfully' });
+        });
+
+        //otherwise got success for writing data to file
+
+
+    }
+    catch (err) {
+        return res.status(401).send({
+            success: false,
+            message: 'problem for writing file from api',
+            message: err.message
+        });
+    }
+});
+
+function emitFileStructure() {
+    const files = getAllFiles(usersDir, usersDir);
     io.emit('file-structure-update', files);
 }
 
@@ -131,10 +160,14 @@ server.listen(PORT, () => {
     emitFileStructure();
 
     //herre we can watch file changes event as user changes or creates new file they are irectly rendered in frontend
-    fs.watchFile(usersDir, { recursive: true }, (eventType, filename) => {
-     if (eventType ==='change' || eventType ==='rename') {
-       //if one of the following event occur make reflect
-       emitFileStructure();
-     }
+    const watcher = chokidar.watch(usersDir, {
+        persistent: true,
+        ignoreInitial: true,
+    });
+
+    //watcher function
+    watcher.on('all', (event, path) => {
+        console.log(`${event} event occurred on ${path}`);
+        emitFileStructure();
     });
 });

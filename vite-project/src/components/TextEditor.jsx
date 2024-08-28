@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import 'quill/dist/quill.snow.css'
 import ReactQuill from 'react-quill'
+import axios from 'axios'
 
 //customized text editor properties
 var modules = {
@@ -32,7 +33,20 @@ var formats = [
 const handleProcedureContentChange = (content) => {
     console.log("content---->", content);
 };
-const TextEditor = () => {
+//supposing we have filepath for selected file and we have to write there fro props
+//that was taken as props for refer inside while component as locall param
+const TextEditor = ({ filePath }) => {
+    const [content, setContent] = useState('');
+
+    //function to save content written inside editor
+    const handleSave = () => {
+        try {
+           //makeing writer request
+        }
+        catch (err) {
+            console.log(err.message);
+        }
+    }
     return (
         <div style={{ border: '2px solid green', position: 'fixed', left: '20%', width: '80%', height: '100%' }}>
             <div style={{ display: 'flex', height: '100%' }}>
