@@ -41,7 +41,12 @@ const TextEditor = ({ filePath }) => {
     //function to save content written inside editor
     const handleSave = () => {
         try {
-           //makeing writer request
+            //makeing writer request
+            axios.post('http://localhost:5000/write-file', { filePath, content }).then((response => {
+                console.log("file saved successfully...");
+            })).catch((error) => {
+                console.log("error saving file: " + error.message);
+            });
         }
         catch (err) {
             console.log(err.message);
@@ -55,10 +60,13 @@ const TextEditor = ({ filePath }) => {
                     modules={modules}
                     formats={formats}
                     placeholder="write your content ...."
-                    onChange={handleProcedureContentChange}
+                    value={content}
+                    onChange={setContent}
                     style={{ flex: 1, height: '100%' }}
                 />
+                <button onClick={()=>{handleSave()}}>save program</button>
             </div>
+            {console.log(content)}
         </div>
     )
 }
