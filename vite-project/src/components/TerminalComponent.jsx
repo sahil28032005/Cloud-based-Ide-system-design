@@ -4,9 +4,10 @@ import { FitAddon } from 'xterm-addon-fit';
 import { io } from 'socket.io-client';
 import 'xterm/css/xterm.css';
 
-const TerminalComponent = () => {
+const TerminalComponent = ({ socket }) => {
+    console.log("socket instance", socket);
     const terminalRef = useRef(null);
-    const socketRef = useRef(null);
+    // const socketRef = useRef(null);
     const xtermRef = useRef(null);
     const fitAddonRef = useRef(null);
     const visible = useRef(false);
@@ -26,17 +27,18 @@ const TerminalComponent = () => {
         fitAddon.fit();
 
         //try to make backend socket connection
-        const socket = io('http://localhost:5000');
-        socket.on('connect', () => {
+        // const socket = io('http://localhost:5000');
+        socket?.on('connect', () => {
             console.log('Connected to server');
         });
-        socket.on('terminal:data', (data) => {
+        socket?.on('terminal:data', (data) => {
             xterm.write(data);
+
         });
         xterm.onData((data) => {
-
+            console.log(data);
             if (data === '\r') { // Detect Enter key
-                socket.emit('chat_message', commandBuffer.current);
+                socket?.emit('chat_message', commandBuffer.current);
                 commandBuffer.current = ''; // Clear the buffer after sending
             } else {
                 xterm.write(data);

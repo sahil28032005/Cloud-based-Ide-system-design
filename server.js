@@ -111,6 +111,11 @@ app.get('/files', (req, res) => {
     res.json(fileTree);
 });
 
+function emitFileStructure(){
+    const files=getAllFiles(usersDir,usersDir);
+    io.emit('file-structure-update', files);
+}
+
 server.listen(PORT, () => {
     console.log(`server listening on port ${PORT}`);
     const socket = ioClient(`http://localhost:${PORT}`);//testing web socket connection for learning purpose
@@ -120,5 +125,16 @@ server.listen(PORT, () => {
 
     socket.on('chat message', (msg) => {
         console.log('Message received from server:', msg);
+    });
+
+    // Emit the file structure to new clients
+    emitFileStructure();
+
+    //herre we can watch file changes event as user changes or creates new file they are irectly rendered in frontend
+    fs.watchFile(usersDir, { recursive: true }, (eventType, filename) => {
+     if (eventType ==='change' || eventType ==='rename') {
+       //if one of the following event occur make reflect
+       emitFileStructure();
+     }
     });
 });

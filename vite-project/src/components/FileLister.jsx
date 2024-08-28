@@ -13,23 +13,26 @@ const FileLister = () => {
 
     const renderFileTree = (tree, depth = 0) => {
         return (
-            <ul style={{ paddingLeft: depth * 20,listStyle:'none' }}>
-                {Object.keys(tree).map(key => (
-                    <li key={key}>
-                        {key}
-                        {typeof tree[key] === 'object' && tree[key] !== null && renderFileTree(tree[key], depth + 1)}
-                    </li>
-                ))}
-            </ul>
+            <div >
+                <ul style={{ paddingLeft: depth * 20, listStyle: 'none' }}>
+                    {Object.keys(tree).map(key => (
+                        <li key={key}>
+                            {key}
+                            {typeof tree[key] === 'object' && tree[key] !== null && renderFileTree(tree[key], depth + 1)}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
         );
     };
 
 
     return (
-        <div>
-        <h1>File Structure</h1>
-        {renderFileTree(fileTree)}
-    </div>
+        <div style={{border:'2px solid black',position:'fixed',height:'100%',width:'20vw',left:'0'}}>
+            <h1>File Structure</h1>
+            {renderFileTree(fileTree)}
+        </div>
     )
 }
 
