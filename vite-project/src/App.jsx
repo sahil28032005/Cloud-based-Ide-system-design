@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 // import './App.css'
 import TerminalComponent from './components/TerminalComponent'
-import FileLister from './components/FileLister'
+import FileLister from './components/FileLister';
+import TextEditor from './components/TextEditor';
 import { io } from 'socket.io-client'
 function App() {
   const socketRef = useRef(null);
@@ -25,7 +26,8 @@ function App() {
   }
   return (
     <>
-      <FileLister />
+      <FileLister socket={socketRef.current}/>
+      <TextEditor/>
       <TerminalComponent socket={socketRef.current} />
     </>
   )
