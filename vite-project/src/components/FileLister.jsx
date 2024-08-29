@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react'
 
-const FileLister = ({ socket }) => {
+const FileLister = ({ onSelect, socket }) => {
+    //selection manager
+    const handleFileClick = (filePath) => {
+        onSelect(filePath);
+    };
+
+
     const [fileTree, setFileTree] = useState({});
     const pathStore = useRef('');
     //get file data as component renders first time
@@ -18,19 +24,21 @@ const FileLister = ({ socket }) => {
     const renderFileTree = (tree, depth = 0, path = '') => {
         return (
             <>
-                {console.log("current path: ", path)}
+                {/* {console.log("current path: ", path)} */}
                 <div >
                     <ul style={{ paddingLeft: depth * 20, listStyle: 'none' }}>
                         {Object.keys(tree).map(key => {
-                            path += key
+                            const currentPath = path + key;
+                            console.log("calculating childs for ", key);
+                            console.log("childcount", Object.keys(tree[key]).length);
 
                             return (
                                 <li key={key}>
-                                    <div>{key}</div>
-                                    {typeof tree[key] === 'object' && tree[key] !== null && renderFileTree(tree[key], depth + 1, path+'/')}
+                                    <div onClick={() => { handleFileClick(currentPath); console.log(currentPath) }}>{key}</div>
+                                    {typeof tree[key] === 'object' && tree[key] !== null && renderFileTree(tree[key], depth + 1, currentPath + '/')}
+
                                 </li>
                             )
-
                         })}
                     </ul>
                 </div>

@@ -5,6 +5,7 @@ import FileLister from './components/FileLister';
 import TextEditor from './components/TextEditor';
 import { io } from 'socket.io-client'
 function App() {
+  const [selectedFilePath, setSelectedFilePath] = useState('');
   const socketRef = useRef(null);
   const [isSocketReady, setIsSocketReady] = useState(false);
   useEffect(() => {
@@ -12,6 +13,8 @@ function App() {
     socketRef.current.on('connect', () => {
       setIsSocketReady(true);
     });
+
+ 
     return () => {
       // socketRef.current.disconnect();//cleanup code
       if (socketRef.current) {
@@ -20,15 +23,22 @@ function App() {
     };
   }, []);
 
+  //selection path setter
+  const handleSelection = (path) => {
+    //idea is path come here after small prop drill frim fileLister component or other relative
+    setSelectedFilePath(path);
+  }
+
   if (!isSocketReady) {
     // Optionally, render a loading state while the socket is connecting
     return <div>Loading...</div>;
   }
   return (
     <>
-      <FileLister socket={socketRef.current}/>
-      <TextEditor/>
+      <FileLister onSelect={handleSelection} socket={socketRef.current} />
+      <TextEditor filePath={'user/'+selectedFilePath}/>
       <TerminalComponent socket={socketRef.current} />
+      <div>selected file:: {'user/'+selectedFilePath}</div>
     </>
   )
 }
