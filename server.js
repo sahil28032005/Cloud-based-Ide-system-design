@@ -140,6 +140,29 @@ app.post('/write-file', (req, res) => {
     }
 });
 
+//route for read data frim selected file
+app.get('/read-file', function (req, res) {
+    try {
+        const {filePath} = req.query;
+        const fullPath = path.join(__dirname, filePath);
+
+        fs.readFile(fullPath, 'utf8', (err, data) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            res.status(200).json({ content: data });
+        });
+    }
+    catch (err) {
+        return res.status(401).send({
+            success: false,
+            messgae: 'error while reading file data',
+            err: err.message
+        });
+    }
+
+});
+
 function emitFileStructure() {
     const files = getAllFiles(usersDir, usersDir);
     io.emit('file-structure-update', files);

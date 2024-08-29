@@ -36,9 +36,9 @@ function App() {
   return (
     <>
       <FileLister onSelect={handleSelection} socket={socketRef.current} />
-      <TextEditor filePath={'user/'+selectedFilePath}/>
+      <TextEditor filePath={selectedFilePath}/>
       <TerminalComponent socket={socketRef.current} />
-      <div>selected file:: {'user/'+selectedFilePath}</div>
+      <div>selected file:: {selectedFilePath}</div>
     </>
   )
 }

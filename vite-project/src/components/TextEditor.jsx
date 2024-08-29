@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import 'quill/dist/quill.snow.css'
 import ReactQuill from 'react-quill'
 import axios from 'axios'
@@ -38,6 +38,19 @@ const handleProcedureContentChange = (content) => {
 const TextEditor = ({ filePath }) => {
     const [content, setContent] = useState('');
 
+
+    // file selection data retrival
+    useEffect(() => {
+        if (filePath) {
+            axios.get('http://localhost:5000/read-file', { params: { filePath: filePath } })
+                .then(response => {
+                    setContent(response.data.content);
+                })
+                .catch(err => {
+                    console.log("reading basedd issues", err.message);
+                });
+        }
+    }, [filePath]);
     //function to save content written inside editor
     const handleSave = () => {
         try {
@@ -64,7 +77,7 @@ const TextEditor = ({ filePath }) => {
                     onChange={setContent}
                     style={{ flex: 1, height: '100%' }}
                 />
-                <button onClick={()=>{handleSave()}}>save program</button>
+                <button onClick={() => { handleSave() }}>save program</button>
             </div>
             {console.log(content)}
         </div>

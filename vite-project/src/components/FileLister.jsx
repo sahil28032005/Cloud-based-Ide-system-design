@@ -3,7 +3,9 @@ import React, { useEffect, useState, useRef } from 'react'
 const FileLister = ({ onSelect, socket }) => {
     //selection manager
     const handleFileClick = (filePath) => {
-        onSelect(filePath);
+        onSelect('user/'+filePath);
+        //here try to write data that is already present inside that selected file
+        
     };
 
 
@@ -18,6 +20,8 @@ const FileLister = ({ onSelect, socket }) => {
 
         socket.on('file-structure-update', (updatedTree) => {
             setFileTree(updatedTree);
+
+
         });
     }, [socket]);
 
