@@ -10,7 +10,7 @@ const app = express();
 const chokidar = require('chokidar');
 app.use(cors());
 const server = http.createServer(app);
-// console.log(server);
+// console.log(server); logs testing
 const io = socketIo(server, {
     cors: {
         origin: "http://localhost:5173", // or '*' to allow all origins
