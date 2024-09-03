@@ -54,8 +54,8 @@ const FileLister = ({ onSelect, socket }) => {
 
 
     return (
-        <div style={{ border: '2px solid black', position: 'fixed', height: '100%', width: '20vw', left: '0' }}>
-            <h1>File Structure</h1>
+        <div style={{padding:'20px', border: '2px solid black',width:'fit-content'}}>
+            {/* <h1>File Structure</h1> */}
             {renderFileTree(fileTree)}
         </div>
     )

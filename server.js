@@ -55,7 +55,7 @@ ptyProcess.on('data', function (data) {
 //listerning module for socker connectors socket.io connectiions
 io.on('connection', (socket) => {
     console.log("some user connected", socket.id);
-
+    
     //listern custom events gere
     socket.on('chat_message', (msg) => {
         console.log('Message received:', msg);

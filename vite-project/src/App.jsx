@@ -14,7 +14,7 @@ function App() {
       setIsSocketReady(true);
     });
 
- 
+
     return () => {
       // socketRef.current.disconnect();//cleanup code
       if (socketRef.current) {
@@ -35,10 +35,14 @@ function App() {
   }
   return (
     <>
-      <FileLister onSelect={handleSelection} socket={socketRef.current} />
-      <TextEditor filePath={selectedFilePath}/>
-      <TerminalComponent socket={socketRef.current} />
       <div>selected file:: {selectedFilePath}</div>
+      <div style={{width:'100vw',display:'flex'}}>
+        <FileLister onSelect={handleSelection} socket={socketRef.current} />
+        <TextEditor filePath={selectedFilePath} />
+        <TerminalComponent socket={socketRef.current} />
+      </div>
+
+
     </>
   )
 }

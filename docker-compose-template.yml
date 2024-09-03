@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  dev-environment:
+    image: my-dev-environment
+    ports:
+      - "5027:5027"
+    volumes:
+      - ./workspace:/workspace
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge
