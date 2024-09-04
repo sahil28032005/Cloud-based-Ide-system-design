@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 const chokidar = require('chokidar');
+const { exec } = require('child_process');
 app.use(cors());
 const server = http.createServer(app);
 // console.log(server); logs testing
@@ -54,8 +55,22 @@ ptyProcess.on('data', function (data) {
 
 //listerning module for socker connectors socket.io connectiions
 io.on('connection', (socket) => {
-    console.log("some user connected", socket.id);
-    
+    console.log("some user connected to centralized docker server", socket.id);
+    //spin docker container for particulae user here
+    exec('./start-user-container.sh', (err, stdout, stderr) => {
+        if (err) {
+            console.error(`Error: ${stderr}`);
+            res.status(500).send('Failed to start session');
+            return;
+        }
+        console.log(`Output: ${stdout}`);
+
+        //extract details from script output termianl
+        const userId = stdout.match(/User ID: (.*)/)[1];
+        const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
+
+
+    });
     //listern custom events gere
     socket.on('chat_message', (msg) => {
         console.log('Message received:', msg);
@@ -143,7 +158,7 @@ app.post('/write-file', (req, res) => {
 //route for read data frim selected file
 app.get('/read-file', function (req, res) {
     try {
-        const {filePath} = req.query;
+        const { filePath } = req.query;
         const fullPath = path.join(__dirname, filePath);
 
         fs.readFile(fullPath, 'utf8', (err, data) => {

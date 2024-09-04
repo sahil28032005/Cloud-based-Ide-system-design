@@ -1,16 +1,12 @@
+# Dockerfile for user instance
 FROM node:14
 
-RUN apt-get update && apt-get install -y \
-    git \
-    vim \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /workspace
-COPY package*.json ./
+
+COPY package.json package-lock.json ./
 RUN npm install
 
+COPY . .
+
 EXPOSE 5027
-
-CMD ["tail", "-f", "/dev/null"]
-
-
+CMD ["npm", "start"]
