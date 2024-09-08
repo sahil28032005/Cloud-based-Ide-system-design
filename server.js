@@ -177,7 +177,7 @@ app.get('/read-file', function (req, res) {
     }
 
 });
-
+//hj
 function emitFileStructure() {
     const files = getAllFiles(usersDir, usersDir);
     io.emit('file-structure-update', files);
