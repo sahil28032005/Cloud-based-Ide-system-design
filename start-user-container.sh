@@ -27,6 +27,9 @@ CONTAINER_ID=$(docker ps -q --filter "label=com.docker.compose.service=dev-envir
 # Storing container ID for backup
 echo $CONTAINER_ID > ./container_id.txt
 
+chmod +x start-user-container.sh
+
+
 # Output the user's container ID and workspace directory
 echo "User ID: $USER_ID"
 echo "Workspace Directory: $(pwd)"

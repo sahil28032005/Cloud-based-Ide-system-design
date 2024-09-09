@@ -57,20 +57,22 @@ ptyProcess.on('data', function (data) {
 io.on('connection', (socket) => {
     console.log("some user connected to centralized docker server", socket.id);
     //spin docker container for particulae user here
-    exec('./start-user-container.sh', (err, stdout, stderr) => {
-        if (err) {
-            console.error(`Error: ${stderr}`);
-            res.status(500).send('Failed to start session');
-            return;
-        }
-        console.log(`Output: ${stdout}`);
+    
+    const testscript = exec('start-user-container.sh /');
+    // exec('./start-user-container.sh', (err, stdout, stderr) => {
+    //     if (err) {
+    //         console.error(`Error: ${stderr}`);
+    //         // res.status(500).send('Failed to start session');
+    //         return;
+    //     }
+    //     console.log(`Output: ${stdout}`);
 
-        //extract details from script output termianl
-        const userId = stdout.match(/User ID: (.*)/)[1];
-        const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
+    //     //extract details from script output termianl
+    //     const userId = stdout.match(/User ID: (.*)/)[1];
+    //     const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
 
 
-    });
+    // });
     //listern custom events gere
     socket.on('chat_message', (msg) => {
         console.log('Message received:', msg);
