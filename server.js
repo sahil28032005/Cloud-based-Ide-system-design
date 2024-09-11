@@ -14,7 +14,7 @@ const server = http.createServer(app);
 // console.log(server); logs testing
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:5173", // or '*' to allow all origins
+        origin: "*", // or '*' to allow all origins
         methods: ["GET", "POST"],
         allowedHeaders: ["my-custom-header"],
         credentials: true

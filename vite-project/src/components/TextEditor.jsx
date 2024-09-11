@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import 'quill/dist/quill.snow.css'
-import ReactQuill from 'react-quill'
+import "quill/dist/quill.snow.css";
+import ReactQuill from 'react-quill';
 import axios from 'axios'
 
 //customized text editor properties
