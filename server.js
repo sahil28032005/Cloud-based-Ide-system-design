@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
     console.log("some user connected to centralized docker server", socket.id);
     //spin docker container for particulae user here
     
-    const testscript = exec('start-user-container.sh /');
+    // const testscript = exec('start-user-container.sh /');
     // exec('./start-user-container.sh', (err, stdout, stderr) => {
     //     if (err) {
     //         console.error(`Error: ${stderr}`);
@@ -187,14 +187,14 @@ function emitFileStructure() {
 
 server.listen(PORT, () => {
     console.log(`server listening on port ${PORT}`);
-    const socket = ioClient(`http://localhost:${PORT}`);//testing web socket connection for learning purpose
-    socket.on('connect', () => {
-        console.log('Client connected to server');
-    });
+    // const socket = ioClient(`http://localhost:${PORT}`);//testing web socket connection for learning purpose
+    // socket.on('connect', () => {
+    //     console.log('Client connected to server');
+    // });
 
-    socket.on('chat message', (msg) => {
-        console.log('Message received from server:', msg);
-    });
+    // socket.on('chat message', (msg) => {
+    //     console.log('Message received from server:', msg);
+    // });
 
     // Emit the file structure to new clients
     emitFileStructure();
