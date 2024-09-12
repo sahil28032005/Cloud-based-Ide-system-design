@@ -29,33 +29,51 @@
 # update for manual spinup of conntainers
 # Use a base image with both Node.js and Java installed
 # Use an official OpenJDK base image
-FROM openjdk:17-jdk-slim
+# Use a base image with Java and build tools
+# Stage 1: Build
+# Use a base image with Node.js and build tools
+# Use a base image with Node.js and build tools
+# Use an appropriate base image for your application
+FROM node:18
 
-# Install curl
-RUN apt-get update && apt-get install -y curl build-essential
-
-# Add Node.js 18 repository and install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
+# Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Install build dependencies and Python
+RUN apt-get update && \
+    apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
 
+# Install node-gyp globally (if needed)
+RUN npm install  node-gyp
+
 # Install dependencies
-RUN npm install
+RUN npm install --no-cache
 
-# Copy application files
+# Install node-pty with the latest tag
+RUN npm install node-pty@latest
+
 COPY . .
+# Rebuild native modules
+RUN npm rebuild
 
-# Expose port
-EXPOSE 5127
+# Copy the rest of your application code
 
-# Command to run the application
-CMD ["npm", "start"]
+
+# Expose the port that your app runs on
+EXPOSE 5000
+
+# Start your application
+CMD ["node", "server.js"]
+
+
+
 
 
