@@ -37,11 +37,16 @@ function App() {
   }
   return (
     <>
-      <div>selected file:: {selectedFilePath}</div>
-      <div style={{width:'100vw',display:'flex'}}>
-        <FileLister onSelect={handleSelection} socket={socketRef.current} />
-        <TextEditor filePath={selectedFilePath} />
-        <TerminalComponent socket={socketRef.current} />
+      {/* <div>selected file:: {selectedFilePath}</div> */}
+      <div style={{ display: 'flex',height:'100vh'}}>
+        <div style={{height:'100%',width:'15%',background:'gray'}}>
+          <FileLister onSelect={handleSelection} socket={socketRef.current} />
+        </div>
+        <div style={{width:'100%' }}>
+          <TextEditor filePath={selectedFilePath} />
+          <TerminalComponent socket={socketRef.current} />
+        </div>
+
       </div>
 
 

@@ -1,6 +1,6 @@
 # Ignore node_modules inside the vite-project directory
 vite-project/
-workspaces/
+# workspaces/
 vite-project/node_modules
 
 # Ignore npm and yarn log files

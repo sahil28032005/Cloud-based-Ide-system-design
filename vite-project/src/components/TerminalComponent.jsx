@@ -49,9 +49,7 @@ const TerminalComponent = ({ socket }) => {
         fitAddonRef.current = fitAddon;
     }, []);
     return (
-        <div ref={terminalRef} style={{
-            width: '100%', height: '40%', position: 'fixed', bottom: '0', margin: '0px'
-        }} />
+        <div style={{position:'fixed',bottom:'0',width:'100%',height:'35%'}} ref={terminalRef} />
     )
 }
 

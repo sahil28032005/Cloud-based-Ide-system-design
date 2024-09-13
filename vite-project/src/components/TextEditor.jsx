@@ -67,7 +67,7 @@ const TextEditor = ({ filePath }) => {
     }
     return (
         <>
-            <div style={{ border: '2px solid green', width: '100%' }}>
+            <div style={{height:'60%'}}>
                 <div style={{ display: 'flex', height: '100%' }}>
                     <ReactQuill
                         theme="snow"
@@ -76,9 +76,9 @@ const TextEditor = ({ filePath }) => {
                         placeholder="write your content ...."
                         value={content}
                         onChange={setContent}
-                        style={{ flex: 1, height: '100%' }}
+                        style={{ flex: 1,background:'#c8ceb8'}}
                     />
-                    <div><button onClick={handleSave}>save</button></div>
+                    {/* <div><button onClick={handleSave}>save</button></div> */}
                     {/* <button onClick={() => { handleSave() }}>save program</button> */}
                 </div>
                 {console.log(content)}

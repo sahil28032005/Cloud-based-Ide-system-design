@@ -30,7 +30,7 @@ const FileLister = ({ onSelect, socket }) => {
         return (
             <>
                 {/* {console.log("current path: ", path)} */}
-                <div >
+                <div>
                     <ul style={{ paddingLeft: depth * 20, listStyle: 'none' }}>
                         {Object.keys(tree).map(key => {
                             const currentPath = path + key;
@@ -55,7 +55,7 @@ const FileLister = ({ onSelect, socket }) => {
 
 
     return (
-        <div style={{ padding: '20px', border: '2px solid black', width: 'fit-content' }}>
+        <div >
             {/* <h1>File Structure</h1> */}
             {renderFileTree(fileTree)}
         </div>

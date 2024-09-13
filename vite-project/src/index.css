@@ -1,4 +1,5 @@
-*{
+/* Reset margin and padding for the entire document */
+body, html {
     margin: 0;
     padding: 0;
 }
