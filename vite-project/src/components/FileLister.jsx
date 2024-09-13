@@ -3,9 +3,9 @@ import React, { useEffect, useState, useRef } from 'react'
 const FileLister = ({ onSelect, socket }) => {
     //selection manager
     const handleFileClick = (filePath) => {
-        onSelect('user/'+filePath);
+        onSelect(filePath);
         //here try to write data that is already present inside that selected file
-        
+
     };
 
 
@@ -13,10 +13,11 @@ const FileLister = ({ onSelect, socket }) => {
     const pathStore = useRef('');
     //get file data as component renders first time
     useEffect(() => {
-        fetch('http://localhost:5000/files')
+        fetch('http://localhost:5000/files?userId=e76a7bb1-9b33-45b8-bdcf-4256c59fcf9b')
             .then(response => response.json())
             .then(data => setFileTree(data))
             .catch(err => console.error(err));
+
 
         socket.on('file-structure-update', (updatedTree) => {
             setFileTree(updatedTree);
@@ -54,7 +55,7 @@ const FileLister = ({ onSelect, socket }) => {
 
 
     return (
-        <div style={{padding:'20px', border: '2px solid black',width:'fit-content'}}>
+        <div style={{ padding: '20px', border: '2px solid black', width: 'fit-content' }}>
             {/* <h1>File Structure</h1> */}
             {renderFileTree(fileTree)}
         </div>

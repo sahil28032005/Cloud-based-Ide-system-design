@@ -42,7 +42,7 @@ const TextEditor = ({ filePath }) => {
     // file selection data retrival
     useEffect(() => {
         if (filePath) {
-            axios.get('http://localhost:5000/read-file', { params: { filePath: filePath } })
+            axios.get('http://localhost:5000/read-file', { params: { filePath: filePath,userId: 'e76a7bb1-9b33-45b8-bdcf-4256c59fcf9b'   } })
                 .then(response => {
                     setContent(response.data.content);
                 })
@@ -55,7 +55,7 @@ const TextEditor = ({ filePath }) => {
     const handleSave = () => {
         try {
             //makeing writer request
-            axios.post('http://localhost:5000/write-file', { filePath, content }).then((response => {
+            axios.post('http://localhost:5000/write-file', { filePath, content,userId: 'e76a7bb1-9b33-45b8-bdcf-4256c59fcf9b' }).then((response => {
                 console.log("file saved successfully...");
             })).catch((error) => {
                 console.log("error saving file: " + error.message);
