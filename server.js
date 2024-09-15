@@ -37,6 +37,7 @@ app.use(express.json());
 app.use(extractUserId);
 
 const ioClient = require('socket.io-client');
+const { stdout } = require('process');
 
 //make custom port to run node/web server
 const PORT = process.env.PORT || 5000;
@@ -75,77 +76,94 @@ io.on('connection', (socket) => {
 
     if (!userId) {
         //herer idea is to run shelll script as we got our new user first time
-        console.log("user id not arrived");
-        socket.disconnect();
-        return;
+        console.log("user id not arrived,generating new user ID....");
+        exec('./start-user-container.sh', (err, stdout, stderr) => {
+            if (err) {
+                console.error(`Error: ${stderr}`);
+                socket.disconnect();
+                return;
+            }
+            console.log(`output: ${stdout}`);
+        });
+
+        //try to extract details from script output
+        userId = stdout.match(/User ID: (.*)/)[1];
+        const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
+
+        //setup connectiion with newly generated user
+        setupUserConnection(socket, userId, workspaceDir);
+    }
+    else {
+        const userWorkspaceDir = path.join(__dirname, 'workspaces', userId, 'workspaces');
+        setupUserConnection(socket, userId, userWorkspaceDir);
     }
 
-    //store userId inside socket
-    socket.userId = userId;
+    // //store userId inside socket
+    // socket.userId = userId;
 
-    //spin docker container for particulae user here via mapping his diretory structure
-    console.log(`Handling connection for user ID: ${userId}`);
-    const userWorkspaceDir = path.join(__dirname, 'workspaces', userId, 'workspaces');
-    emitFileStructure(userWorkspaceDir);
-    console.log("userWorkspaceDir: ", userWorkspaceDir);
-    const ptyProcess = pty.spawn(shell, [], {
-        name: 'xterm-color',
-        cols: 80,
-        rows: 30,
-        cwd: userWorkspaceDir,  // Set the working directory to the user's workspace
-        env: process.env
-    });
-
-    ptyProcess.on('data', function (data) {
-        console.log(data);
-        io.emit('terminal:data', data);
-    });
-
-    // const testscript = exec('start-user-container.sh /');
-    // exec('./start-user-container.sh', (err, stdout, stderr) => {
-    //     if (err) {
-    //         console.error(`Error: ${stderr}`);
-    //         // res.status(500).send('Failed to start session');
-    //         return;
-    //     }
-    //     console.log(`Output: ${stdout}`);
-
-    //     //extract details from script output termianl
-    //     const userId = stdout.match(/User ID: (.*)/)[1];
-    //     const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
-
-
+    // //spin docker container for particulae user here via mapping his diretory structure
+    // console.log(`Handling connection for user ID: ${userId}`);
+    // const userWorkspaceDir = path.join(__dirname, 'workspaces', userId, 'workspaces');
+    // emitFileStructure(userWorkspaceDir);
+    // console.log("userWorkspaceDir: ", userWorkspaceDir);
+    // const ptyProcess = pty.spawn(shell, [], {
+    //     name: 'xterm-color',
+    //     cols: 80,
+    //     rows: 30,
+    //     cwd: userWorkspaceDir,  // Set the working directory to the user's workspace
+    //     env: process.env
     // });
-    //listern custom events gere
-    socket.on('chat_message', (msg) => {
-        console.log('Message received:', msg);
-        ptyProcess.write(`${msg}\r`);
-        // io.emit('chat_message', msg);
-        // This line is correct if 'sg' is the command you want to send
-    });
 
-    //for file structure updates
-    // Emit initial file structure
+    // ptyProcess.on('data', function (data) {
+    //     console.log(data);
+    //     io.emit('terminal:data', data);
+    // });
 
+    // // const testscript = exec('start-user-container.sh /');
+    // // exec('./start-user-container.sh', (err, stdout, stderr) => {
+    // //     if (err) {
+    // //         console.error(`Error: ${stderr}`);
+    // //         // res.status(500).send('Failed to start session');
+    // //         return;
+    // //     }
+    // //     console.log(`Output: ${stdout}`);
 
-    // Set up chokidar watcher for the user's workspace directory
-    const watcher = chokidar.watch(userWorkspaceDir, {
-        persistent: true,
-        ignoreInitial: true,
-    });
-
-    // Listen for file changes in user's directory
-    watcher.on('all', (event, filePath) => {
-        console.log(`${event} event occurred on ${filePath}`);
-        emitFileStructure(userWorkspaceDir);
-    });
+    // //     //extract details from script output termianl
+    // //     const userId = stdout.match(/User ID: (.*)/)[1];
+    // //     const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
 
 
+    // // });
+    // //listern custom events gere
+    // socket.on('chat_message', (msg) => {
+    //     console.log('Message received:', msg);
+    //     ptyProcess.write(`${msg}\r`);
+    //     // io.emit('chat_message', msg);
+    //     // This line is correct if 'sg' is the command you want to send
+    // });
 
-    //spcket disconnection
-    socket.on('disconnect', () => {
-        console.log("user disconnected");
-    });
+    // //for file structure updates
+    // // Emit initial file structure
+
+
+    // // Set up chokidar watcher for the user's workspace directory
+    // const watcher = chokidar.watch(userWorkspaceDir, {
+    //     persistent: true,
+    //     ignoreInitial: true,
+    // });
+
+    // // Listen for file changes in user's directory
+    // watcher.on('all', (event, filePath) => {
+    //     console.log(`${event} event occurred on ${filePath}`);
+    //     emitFileStructure(userWorkspaceDir);
+    // });
+
+
+
+    // //spcket disconnection
+    // socket.on('disconnect', () => {
+    //     console.log("user disconnected");
+    // });
 
 });
 // app.post('/message', (req, res) => {
@@ -154,6 +172,46 @@ io.on('connection', (socket) => {
 //     ptyProcess.write(`${msg}\r`);
 //     res.status(200).send({ status: 'Message sent' });
 // });
+
+//making seperate connection file for user manageent
+function setupUserConnection(socket, userId, userWorkspaceDir) {
+    socket.userId = userId;
+    console.log(`Handling connection for user ID: ${userId}`);
+    emitFileStructure(userWorkspaceDir);
+    console.log("User workspace directory: ", userWorkspaceDir);
+
+    const ptyProcess = pty.spawn(shell, [], {
+        name: 'xterm-color',
+        cols: 80,
+        rows: 30,
+        cwd: userWorkspaceDir,
+        env: process.env
+    });
+
+    ptyProcess.on('data', function (data) {
+        console.log(data);
+        io.emit('terminal:data', data);
+    });
+
+    socket.on('chat_message', (msg) => {
+        console.log('Message received:', msg);
+        ptyProcess.write(`${msg}\r`);
+    });
+
+    const watcher = chokidar.watch(userWorkspaceDir, {
+        persistent: true,
+        ignoreInitial: true,
+    });
+
+    watcher.on('all', (event, filePath) => {
+        console.log(`${event} event occurred on ${filePath}`);
+        emitFileStructure(userWorkspaceDir);
+    });
+
+    socket.on('disconnect', () => {
+        console.log("User disconnected");
+    });
+}
 
 //try to make initial get request which gets files in users own space
 function getAllFiles(dirPath, baseDir) {
@@ -194,13 +252,13 @@ app.get('/files', (req, res) => {
 app.post('/write-file', (req, res) => {
     try {
         const { filePath, content } = req.body;
-        const fullPath = path.join(__dirname, 'workspaces', req.userId, 'workspaces',filePath);
+        const fullPath = path.join(__dirname, 'workspaces', req.userId, 'workspaces', filePath);
         // console.log("writer path: " + fullPath);
         console.log("made final write path as", fullPath);
         //write arrived content using fs writer module
         fs.writeFile(fullPath, content, (error) => {
             if (error) {
-                return res.status(500).json({ error: 'failed to write file'+error.message });
+                return res.status(500).json({ error: 'failed to write file' + error.message });
             }
             return res.status(200).json({ message: 'File written successfully' });
         });
@@ -219,12 +277,12 @@ app.post('/write-file', (req, res) => {
 });
 
 //route for read data frim selected file
-app.get('/read-file',extractUserId, function (req, res) {
+app.get('/read-file', extractUserId, function (req, res) {
     try {
         console.log("inside readfile", req.userId);
         const { filePath } = req.query;
         console.log("arriven path: ", filePath);
-        const fullPath = path.join(__dirname, 'workspaces', req.userId, 'workspaces',filePath);
+        const fullPath = path.join(__dirname, 'workspaces', req.userId, 'workspaces', filePath);
         console.log("full path: ", fullPath);
         fs.readFile(fullPath, 'utf8', (err, data) => {
             if (err) {

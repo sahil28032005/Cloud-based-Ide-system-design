@@ -1,0 +1,26 @@
+/* FileLister.css */
+.folder-tree {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 2px solid green !important;
+}
+
+/* .TreeNode{
+    margin-left: 20px !important;
+}  */
+
+.folder-tree ul {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.folder-tree li {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.FolderTree .TreeNode {
+    margin-left: 0 !important; /* Remove default margin */
+    padding-left: 0 !important; /* Remove default padding */
+}
+
