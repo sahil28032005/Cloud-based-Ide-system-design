@@ -8,7 +8,8 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 const chokidar = require('chokidar');
-const connectDB=require('./config/db');
+const connectDB = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
 const { exec } = require('child_process');
 app.use(cors());
@@ -34,9 +35,14 @@ function extractUserId(req, res, next) {
         res.status(404).send("user id is required");
     }
 }
+//sutom routes
+app.use(express.json());
+app.use('/auth', authRoutes);
 
 app.use(express.json());
 app.use(extractUserId);
+
+
 
 //testing db connection
 connectDB();

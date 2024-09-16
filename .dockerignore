@@ -27,3 +27,4 @@ docker-compose.yml
 # Ignore Git files and directories
 .git
 .gitignore
+# .env

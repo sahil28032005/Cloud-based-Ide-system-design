@@ -2,15 +2,34 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const router = express.Router();
-
+const { exec } = require('child_process');
 const JWT_SECRET = process.env.JWT_SECRET;
+const path = require('path');
+const scriptPath = '/usr/src/app/start-user-container.sh';
 
-//regitsering route
+//regitsering route this will handle spinning docker containner also
 router.post('/register', async (req, res) => {
     const { username, password } = req.body;
-    const user = new User({ username, password });
-    await user.save();
-    res.status(201).send({ success: true, message: 'user registered successfully' });
+
+    // Spinning docker container for generating uuid for first time
+    exec(scriptPath, async (err, stdout, stderr) => {
+        if (err) {
+            console.error(`Error: ${stderr}`);
+            return res.status(500).send('Failed to generate userId');
+        }
+
+        // Otherwise extract userId from script logs or anything
+        const userIdMatch = stdout.match(/User ID: (.*)/);
+        if (!userIdMatch) {
+            return res.status(500).send('Failed to extract user ID');
+        }
+        const userId = userIdMatch[1].trim();
+        console.log(`Extracted User ID: ${userId}`);
+
+        const user = new User({ username, password, userId });
+        await user.save();
+        res.status(201).send({ success: true, message: 'User registered successfully' });
+    });
 });
 
 //login route
