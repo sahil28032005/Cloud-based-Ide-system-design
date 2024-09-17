@@ -45,7 +45,12 @@ router.post('/register', async (req, res) => {
 //login route
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-   
+    const user =await User.findOne({ username: username });
+    if (!user || !(await user.comparePassword(password))) {
+        return res.status(401).send('Invalid credentials');
+    }
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({message:'credentials matched...', token, userId: user.userId });
 });
 
 module.exports = router;
