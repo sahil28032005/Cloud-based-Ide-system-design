@@ -4,7 +4,8 @@ const bcrypt = require('bcryptjs');
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    userId: { type: String, required: true }
+    userId: { type: String, required: true },
+    workspacePath: { type: String, required: true}
 });
 //prehashing
 UserSchema.pre('save', async function (next) {

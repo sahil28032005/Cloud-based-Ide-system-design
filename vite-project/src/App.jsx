@@ -11,7 +11,7 @@ function App() {
 
   useEffect(() => {
     socketRef.current = io('http://localhost:5000', {
-      query: { userId: 'e76a7bb1-9b33-45b8-bdcf-4256c59fcf9b' }  // Pass userId as an object
+      query: { userId: '8becb45e-3e16-4cdb-a0f1-85a18f636f3b' }  // Pass userId as an object
     });
     socketRef.current.on('connect', () => {
       setIsSocketReady(true);

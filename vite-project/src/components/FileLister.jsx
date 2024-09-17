@@ -13,7 +13,7 @@ const FileLister = ({ onSelect, socket }) => {
     const pathStore = useRef('');
     //get file data as component renders first time
     useEffect(() => {
-        fetch('http://localhost:5000/files?userId=e76a7bb1-9b33-45b8-bdcf-4256c59fcf9b')
+        fetch('http://localhost:5000/files?userId=8becb45e-3e16-4cdb-a0f1-85a18f636f3b')
             .then(response => response.json())
             .then(data => setFileTree(data))
             .catch(err => console.error(err));

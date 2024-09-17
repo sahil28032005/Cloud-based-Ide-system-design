@@ -9,7 +9,7 @@ const fs = require('fs');
 const app = express();
 const chokidar = require('chokidar');
 const connectDB = require('./config/db');
-const authRoutes = require('./routes/authRoutes');
+const authRoutes = require('./authRoutes');
 require('dotenv').config();
 const { exec } = require('child_process');
 app.use(cors());
@@ -105,7 +105,8 @@ io.on('connection', (socket) => {
         setupUserConnection(socket, userId, workspaceDir);
     }
     else {
-        const userWorkspaceDir = path.join(__dirname, 'workspaces', userId, 'workspaces');
+        //this code works by considering server is currently on otherwise this won't work as expected
+        const userWorkspaceDir = path.join(__dirname, 'workspaces', userId);
         setupUserConnection(socket, userId, userWorkspaceDir);
     }
 
@@ -184,6 +185,7 @@ io.on('connection', (socket) => {
 //     res.status(200).send({ status: 'Message sent' });
 // });
 
+
 //making seperate connection file for user manageent
 function setupUserConnection(socket, userId, userWorkspaceDir) {
     socket.userId = userId;
@@ -247,7 +249,7 @@ function getAllFiles(dirPath, baseDir) {
 app.get('/files', (req, res) => {
     // const userId = req.query.userId;
     console.log("inside getfiles", req.userId);
-    const userWorkspaceDir = path.join(__dirname, 'workspaces', req.userId, 'workspaces');
+    const userWorkspaceDir = path.join(__dirname, 'workspaces', req.userId);
     if (!fs.existsSync(userWorkspaceDir)) {
         return res.status(404).send('user directory not found');
     }
@@ -263,7 +265,7 @@ app.get('/files', (req, res) => {
 app.post('/write-file', (req, res) => {
     try {
         const { filePath, content } = req.body;
-        const fullPath = path.join(__dirname, 'workspaces', req.userId, 'workspaces', filePath);
+        const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
         // console.log("writer path: " + fullPath);
         console.log("made final write path as", fullPath);
         //write arrived content using fs writer module
@@ -293,7 +295,7 @@ app.get('/read-file', extractUserId, function (req, res) {
         console.log("inside readfile", req.userId);
         const { filePath } = req.query;
         console.log("arriven path: ", filePath);
-        const fullPath = path.join(__dirname, 'workspaces', req.userId, 'workspaces', filePath);
+        const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
         console.log("full path: ", fullPath);
         fs.readFile(fullPath, 'utf8', (err, data) => {
             if (err) {
