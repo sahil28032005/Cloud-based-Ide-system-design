@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 
+
 const FileLister = ({ onSelect, socket }) => {
     //selection manager
     const handleFileClick = (filePath) => {
@@ -13,17 +14,20 @@ const FileLister = ({ onSelect, socket }) => {
     const pathStore = useRef('');
     //get file data as component renders first time
     useEffect(() => {
-        fetch('http://localhost:5000/files?userId=8becb45e-3e16-4cdb-a0f1-85a18f636f3b')
-            .then(response => response.json())
-            .then(data => setFileTree(data))
-            .catch(err => console.error(err));
+        if (socket) {
+            fetch('http://localhost:5000/files?userId=8becb45e-3e16-4cdb-a0f1-85a18f636f3b')
+                .then(response => response.json())
+                .then(data => setFileTree(data))
+                .catch(err => console.error(err));
 
 
-        socket.on('file-structure-update', (updatedTree) => {
-            setFileTree(updatedTree);
+            socket.on('file-structure-update', (updatedTree) => {
+                setFileTree(updatedTree);
 
 
-        });
+            });
+        }
+
     }, [socket]);
 
     const renderFileTree = (tree, depth = 0, path = '') => {

@@ -1,10 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import  UserContextComponent  from '../context/UserContextComponent.jsx'
 // import './index.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <UserContextComponent>
+      <App />
+    </UserContextComponent>
+
   </StrictMode>,
 )
