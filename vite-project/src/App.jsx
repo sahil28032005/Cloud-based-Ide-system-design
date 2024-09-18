@@ -5,17 +5,22 @@ import FileLister from './components/FileLister';
 import TextEditor from './components/TextEditor';
 import { io } from 'socket.io-client';
 import LoginModule from './components/LoginModule';
-import { UserContext } from '../context/UserContextComponent'
+import { UserContext } from '../context/UserContextComponent';
+import './App.css'; // Assuming you add styles here
 
 function App() {
   const [selectedFilePath, setSelectedFilePath] = useState('');
   const socketRef = useRef(null);
   const [isSocketReady, setIsSocketReady] = useState(false);
   const { userId, setUserId } = useContext(UserContext);
+  const [sidebarWidth, setSidebarWidth] = useState(250); // Default sidebar width
+  const resizerRef = useRef(null);
+  const isResizing = useRef(false);
+
   useEffect(() => {
     if (userId) {
       socketRef.current = io('http://localhost:5000', {
-        query: { userId: userId }  // Pass userId as an object
+        query: { userId: userId }
       });
       socketRef.current.on('connect', () => {
         setIsSocketReady(true);
@@ -27,47 +32,68 @@ function App() {
         }
       };
     }
-
   }, [userId]);
 
   const handleSelection = (path) => {
     setSelectedFilePath(path);
   };
 
-  // if (!isSocketReady) {
-  //   return <div>Loading...</div>;
-  // }
+  const startResizing = (e) => {
+    isResizing.current = true;
+    document.addEventListener('mousemove', resizeSidebar);
+    document.addEventListener('mouseup', stopResizing);
+  };
+
+  const resizeSidebar = (e) => {
+    if (isResizing.current) {
+      const newWidth = e.clientX; // Calculate the new width based on mouse position
+      if (newWidth > 100 && newWidth < 600) { // Set min/max sidebar width
+        setSidebarWidth(newWidth);
+      }
+    }
+  };
+
+  const stopResizing = () => {
+    isResizing.current = false;
+    document.removeEventListener('mousemove', resizeSidebar);
+    document.removeEventListener('mouseup', stopResizing);
+  };
 
   return (
     <Router>
       <Routes>
         {/* Navbar */}
         <Route path="/login" element={<LoginModule />} />
-        <Route path="/" element={<><div style={{
-          height: '50px',
-          backgroundColor: 'lightblue',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 20px'
-        }}>
-          <div>My Navbar</div>
-          <div>Menu</div>
-        </div>
+        <Route path="/" element={
+          <>
+            <div className="navbar">
+              <div>My Navbar</div>
+              <div>Menu</div>
+            </div>
 
-          {/* Main Content */}
-          <div style={{ display: 'flex', height: 'calc(100vh - 50px)' }}>
-            <div style={{ height: '100%', width: '15%', background: 'gray' }}>
-              <FileLister onSelect={handleSelection} socket={socketRef.current} />
+            {/* Main Content */}
+            <div className="main-content">
+              <div
+                className="file-lister"
+                style={{ width: `${sidebarWidth}px` }}
+              >
+                <FileLister onSelect={handleSelection} socket={socketRef.current} />
+              </div>
+
+              <div
+                ref={resizerRef}
+                className="resizer"
+                onMouseDown={startResizing}
+              ></div>
+
+              <div className="content-area">
+                <TextEditor filePath={selectedFilePath} />
+                <TerminalComponent socket={socketRef.current} />
+              </div>
             </div>
-            <div style={{ width: '100%' }}>
-              <TextEditor filePath={selectedFilePath} />
-              <TerminalComponent socket={socketRef.current} />
-            </div>
-          </div></>} />
+          </>
+        } />
       </Routes>
-
-
     </Router>
   );
 }

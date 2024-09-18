@@ -1,9 +1,9 @@
-#root {
+/* #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-}
+} */
 
 
 .logo {
@@ -45,5 +45,47 @@
 body, html {
   margin: 0;
   padding: 0;
+}
+/* resizer */
+/* Navbar styling */
+.navbar {
+  height: 50px;
+  background-color: lightblue;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+/* Main content styling */
+.main-content {
+  display: flex;
+  height: calc(100vh - 50px);
+  position: relative;
+}
+
+/* Sidebar (File Lister) styling */
+.file-lister {
+  height: 100%;
+  background: gray;
+  overflow-y: auto;
+  transition: width 0.2s ease;
+}
+
+/* Resizer bar */
+.resizer {
+  width: 5px;
+  cursor: col-resize;
+  background-color: darkgray;
+  height: 100%;
+  position: relative;
+}
+
+/* Content area (TextEditor and TerminalComponent) styling */
+.content-area {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 

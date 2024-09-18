@@ -1,69 +1,93 @@
-import React, { useEffect, useState, useRef } from 'react'
-
+import React, { useEffect, useState, useRef, useContext } from 'react';
+import { UserContext } from '../../context/UserContextComponent';
+import { FaFolder, FaFolderOpen, FaFile } from 'react-icons/fa'; // Import icons
 
 const FileLister = ({ onSelect, socket }) => {
-    //selection manager
-    const handleFileClick = (filePath) => {
-        onSelect(filePath);
-        //here try to write data that is already present inside that selected file
-
-    };
-
-
+    const { userId } = useContext(UserContext);
     const [fileTree, setFileTree] = useState({});
+    const [expandedFolders, setExpandedFolders] = useState({});
     const pathStore = useRef('');
-    //get file data as component renders first time
+
     useEffect(() => {
-        if (socket) {
-            fetch('http://localhost:5000/files?userId=8becb45e-3e16-4cdb-a0f1-85a18f636f3b')
+        if (socket && userId) {
+            fetch(`http://localhost:5000/files?userId=${userId}`)
                 .then(response => response.json())
                 .then(data => setFileTree(data))
                 .catch(err => console.error(err));
 
-
             socket.on('file-structure-update', (updatedTree) => {
                 setFileTree(updatedTree);
-
-
             });
         }
+    }, [socket, userId]);
 
-    }, [socket]);
+    const handleFileClick = (filePath) => {
+        onSelect(filePath);
+    };
+
+    const toggleFolder = (folderPath) => {
+        setExpandedFolders(prevState => ({
+            ...prevState,
+            [folderPath]: !prevState[folderPath]
+        }));
+    };
 
     const renderFileTree = (tree, depth = 0, path = '') => {
         return (
-            <>
-                {/* {console.log("current path: ", path)} */}
-                <div>
-                    <ul style={{ paddingLeft: depth * 20, listStyle: 'none' }}>
-                        {Object.keys(tree).map(key => {
-                            const currentPath = path + key;
-                            console.log("calculating childs for ", key);
-                            console.log("childcount", Object.keys(tree[key]).length);
+            <ul style={{ paddingLeft: depth * 15, listStyle: 'none', margin: 0 }}>
+                {Object.keys(tree).map(key => {
+                    const currentPath = path + key;
+                    const isFolder = typeof tree[key] === 'object' && Object.keys(tree[key]).length > 0; // Check if it's a folder
+                    const isExpanded = expandedFolders[currentPath];
 
-                            return (
-                                <li key={key}>
-                                    <div onClick={() => { handleFileClick(currentPath); console.log(currentPath) }}>{key}</div>
-                                    {typeof tree[key] === 'object' && tree[key] !== null && renderFileTree(tree[key], depth + 1, currentPath + '/')}
-
-                                </li>
-                            )
-                        })}
-                    </ul>
-                </div>
-            </>
-
-
+                    return (
+                        <li key={key} style={{ margin: '5px 0' }}>
+                            <div
+                                onClick={() => {
+                                    isFolder ? toggleFolder(currentPath) : handleFileClick(currentPath);
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    cursor: 'pointer',
+                                    padding: '5px 10px',
+                                    borderRadius: '4px',
+                                    backgroundColor: isFolder ? (isExpanded ? '#f0f0f0' : '#fafafa') : '#ffffff',
+                                    transition: 'background-color 0.2s',
+                                    color: isFolder ? '#007acc' : '#333',
+                                    fontWeight: isFolder ? 'bold' : 'normal'
+                                }}
+                                onMouseOver={e => (e.currentTarget.style.backgroundColor = '#e6f7ff')}
+                                onMouseOut={e => (e.currentTarget.style.backgroundColor = isFolder && isExpanded ? '#f0f0f0' : '#fafafa')}
+                            >
+                                {isFolder ? (
+                                    isExpanded ? <FaFolderOpen style={{ marginRight: 5 }} /> : <FaFolder style={{ marginRight: 5 }} />
+                                ) : (
+                                    <FaFile style={{ marginRight: 5 }} />
+                                )}
+                                {key}
+                            </div>
+                            {isFolder && isExpanded && renderFileTree(tree[key], depth + 1, currentPath + '/')}
+                        </li>
+                    );
+                })}
+            </ul>
         );
     };
 
-
     return (
-        <div >
-            {/* <h1>File Structure</h1> */}
+        <div style={{
+            padding: '10px',
+            background: '#2d2d2d', 
+            color: '#eaeaea', 
+            height: '100%', 
+            overflowY: 'auto', 
+            borderRight: '1px solid #444',
+            fontFamily: 'monospace'
+        }}>
             {renderFileTree(fileTree)}
         </div>
-    )
-}
+    );
+};
 
-export default FileLister
+export default FileLister;
