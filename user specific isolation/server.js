@@ -29,10 +29,11 @@ function extractUserId(req, res, next) {
     const userId = req.query.userId || req.body.userId;
     if (userId) {
         req.userId = userId;
+        console.log("extraction done successfully!");
         next();
     }
     else {
-        res.status(404).send("user id is required");
+        return res.status(404).send("user id is required");
     }
 }
 //sutom routes
@@ -88,26 +89,42 @@ io.on('connection', (socket) => {
     if (!userId) {
         //herer idea is to run shelll script as we got our new user first time
         console.log("user id not arrived,generating new user ID....");
-        exec('./start-user-container.sh', (err, stdout, stderr) => {
-            if (err) {
-                console.error(`Error: ${stderr}`);
-                socket.disconnect();
-                return;
-            }
-            console.log(`output: ${stdout}`);
-        });
+        return res.status(404).send("socket connection has no userId specified!");
+        // exec('./start-user-container.sh', (err, stdout, stderr) => {
+        //     if (err) {
+        //         console.error(`Error: ${stderr}`);
+        //         socket.disconnect();
+        //         return;
+        //     }
+        //     console.log(`output: ${stdout}`);
+        // });
 
-        //try to extract details from script output
-        userId = stdout.match(/User ID: (.*)/)[1];
-        const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
+        // //try to extract details from script output
+        // userId = stdout.match(/User ID: (.*)/)[1];
+        // const workspaceDir = stdout.match(/Workspace Directory: (.*)/)[1];
 
-        //setup connectiion with newly generated user
-        setupUserConnection(socket, userId, workspaceDir);
+        // //setup connectiion with newly generated user
+        // setupUserConnection(socket, userId, workspaceDir);
     }
     else {
         //this code works by considering server is currently on otherwise this won't work as expected
+        console.log("insdie else part");
         const userWorkspaceDir = path.join(__dirname, 'workspaces', userId);
-        setupUserConnection(socket, userId, userWorkspaceDir);
+
+        //check weather path sync exists or not
+        if (!fs.existsSync(userWorkspaceDir)) {
+            console.log(`User directory for ${userId} does not exist. Creating...`);
+
+            //creating directory
+            fs.mkdirSync(userWorkspaceDir, { recursive: true });
+            console.log(`Directory created for user ${userId} at ${userWorkspaceDir}`);
+            
+        }
+        else{
+            console.log(`Directory already exists for user ${userId}`);
+            setupUserConnection(socket, userId, userWorkspaceDir);
+        }
+        
     }
 
     // //store userId inside socket
@@ -200,12 +217,13 @@ function setupUserConnection(socket, userId, userWorkspaceDir) {
         cwd: userWorkspaceDir,
         env: process.env
     });
-
+    //if terminal has some command response this sends backt to all connected socket clients as advantage if using socket io
     ptyProcess.on('data', function (data) {
         console.log(data);
         io.emit('terminal:data', data);
     });
-
+    //takes command for execution and write in it actuall terminal of docker containers terminal insted of using ssh
+    
     socket.on('chat_message', (msg) => {
         console.log('Message received:', msg);
         ptyProcess.write(`${msg}\r`);
