@@ -105,9 +105,12 @@ io.on('connection', (socket) => {
         if (!fs.existsSync(userWorkspaceDir)) {
             console.log(`User directory for ${userId} does not exist. Creating...`);
 
-            //creating directory
+            //creating directory only if user provided id has not directory sync present 
             fs.mkdirSync(userWorkspaceDir, { recursive: true });
             console.log(`Directory created for user ${userId} at ${userWorkspaceDir}`);
+
+            //here user needs to be mapped with his workspace which is newly created using same helper function as used in else part
+            // setupUserConnection(socket, userId, userWorkspaceDir); //no need because after folder generation user must login and create repository and then connect
             
         }
         else{

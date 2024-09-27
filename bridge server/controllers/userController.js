@@ -1,6 +1,9 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+const USER_DATA_DIR = path.join(__dirname, 'user_data');
 
 //registering new user
 exports.registerUser = async (req, res) => {
@@ -17,7 +20,18 @@ exports.registerUser = async (req, res) => {
         const newUser = new User({ username, email, password: hashedPassword });
         await newUser.save();
 
-        res.status(200).send({ success: 'true', message: 'user registered successfully' });
+        //join particular users path and maker her directory
+        const userDir = path.join(USER_DATA_DIR, newUser._id.toString());
+        //now make that directorry for bridge server at temproryr basis while learning
+        fs.mkdir(userDir, { recursive: true }, (err) => {
+            if (err) {
+                console.error('Error creating user directory:', err);
+                return res.status(500).send('Error creating user directory');
+            }
+
+            // Successfully registered and created user directory
+            res.status(200).send({ success: 'true', message: 'User registered successfully' });
+        });
     }
     catch (err) {
         res.status(500).json({ message: err.message });
@@ -57,13 +71,13 @@ exports.getUserById = async function (req, res) {
 }
 
 //get user profile as protected route
-exports.getUserProfile=async(req,res)=>{
-    try{
-        const user=await User.findById(req.user.id).select('-password');
+exports.getUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
         res.status(200).json(user);
     }
-    catch(err){
-        res.status(500).json({message: err.message});
+    catch (err) {
+        res.status(500).json({ message: err.message });
     }
-   
+
 }

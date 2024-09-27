@@ -1,5 +1,7 @@
 const Repl = require('../models//repl');
 const Docker = require('dockerode');
+const path = require('path');
+const USER_DATA_DIR = path.join(__dirname, 'user_data');
 const docker = new Docker({
     host: 'localhost',
     port: 2375, // Default port for Docker TCP API
@@ -12,6 +14,8 @@ const docker = new Docker({
 const startDockerContainer = async (req, res, repl) => {
     console.log("arrived inside start ocker container method");
     try {
+        // construct path to the users workspace directory
+        const userWorkspaceDir=path.join(USER_DATA_DIR, repl.owner.toString());
         //here we have repl access of newly craeted repl by user
         const container = await docker.createContainer({
             Image: 'user_isolation',
@@ -20,9 +24,10 @@ const startDockerContainer = async (req, res, repl) => {
             Env: repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : [],
             Labels: { replId: repl._id.toString() },
             HostConfig: {
-                // Binds: [
-                //     `/user_data/${repl.owner}/:${repl.name}/data`  // Bind mount user data directories
-                // ]
+                Binds: [
+                    // Bind mount the user's workspace directory into the container
+                    `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`  // Adjusted to mount to /workspace/userId inside the container
+                ],
                 PortBindings: {
                     '5000/tcp': [{ HostPort: '5000' }]  // This maps container port 5000 to host port 5001
                 }
