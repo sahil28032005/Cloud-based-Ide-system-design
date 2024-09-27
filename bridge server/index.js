@@ -1,5 +1,5 @@
 const express = require('express');
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 const app = express();
 
 // Import Routes
@@ -16,7 +16,7 @@ app.use(express.json());
 connectDB();
 //define routes here
 app.use('/api/users', userRoutes);  // User routes
-// app.use('/api/repls', replRoutes);  // Repl routes
+app.use('/api/repls', replRoutes);   // Repl routes
 // app.use('/api/teams', teamRoutes);  // Team routes
 // app.use('/api/sessions', sessionRoutes);  // Session routes
 

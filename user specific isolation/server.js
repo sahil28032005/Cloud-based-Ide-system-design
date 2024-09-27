@@ -8,8 +8,6 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 const chokidar = require('chokidar');
-const connectDB = require('./config/db');
-const authRoutes = require('./authRoutes');
 require('dotenv').config();
 const { exec } = require('child_process');
 app.use(cors());
@@ -38,15 +36,7 @@ function extractUserId(req, res, next) {
 }
 //sutom routes
 app.use(express.json());
-app.use('/auth', authRoutes);
 
-app.use(express.json());
-app.use(extractUserId);
-
-
-
-//testing db connection
-connectDB();
 
 const ioClient = require('socket.io-client');
 const { stdout } = require('process');
