@@ -12,9 +12,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -23,6 +25,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -41,11 +44,14 @@
 .read-the-docs {
   color: #888;
 }
+
 /* Reset margin and padding for the entire document */
-body, html {
+body,
+html {
   margin: 0;
   padding: 0;
 }
+
 /* resizer */
 /* Navbar styling */
 .navbar {
@@ -58,34 +64,45 @@ body, html {
 }
 
 /* Main content styling */
+/* Main container for the app */
 .main-content {
   display: flex;
-  height: calc(100vh - 50px);
-  position: relative;
+  height: 100vh; /* Full viewport height */
 }
 
-/* Sidebar (File Lister) styling */
+/* File lister on the left side */
 .file-lister {
-  height: 100%;
-  background: gray;
-  overflow-y: auto;
-  transition: width 0.2s ease;
+  background-color: #f4f4f4; /* Light gray background for visibility */
+  border-right: 1px solid #ccc; /* Border on the right side */
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  flex: 0 0 20%; /* Fixed width of 20% */
 }
 
 /* Resizer bar */
 .resizer {
-  width: 5px;
-  cursor: col-resize;
-  background-color: darkgray;
-  height: 100%;
-  position: relative;
+  width: 5px; /* Width of the resizer */
+  cursor: ew-resize; /* Cursor style when hovering */
+  background-color: #ddd; /* Background color */
 }
 
-/* Content area (TextEditor and TerminalComponent) styling */
+/* Content area for text editor and terminal */
 .content-area {
-  flex: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: flex; /* Flexbox for layout */
+  flex: 1; /* Take the remaining width */
+  flex-direction: row; /* Align children in a row */
+  height: 100%; /* Ensure it takes the full height */
 }
 
+/* Text editor container */
+.editor-container {
+  flex: 1; /* Take half of the remaining width */
+  border-right: 1px solid #ccc; /* Optional border on the right side */
+  overflow: auto; /* Allow scrolling */
+}
+
+/* Terminal container */
+.terminal-container {
+  flex: 1; /* Take the other half of the remaining width */
+  overflow: auto; /* Allow scrolling */
+  height: 100%; /* Ensure full height */
+}

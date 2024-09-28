@@ -15,7 +15,7 @@ const TerminalComponent = ({ socket }) => {
 
     //related useEffetcts
     useEffect(() => {
-        if (socket) {
+        // if (socket) {
             //inatialize initializers
             if (visible.current) return;
             visible.current = true;
@@ -48,11 +48,11 @@ const TerminalComponent = ({ socket }) => {
             });
             xtermRef.current = xterm;
             fitAddonRef.current = fitAddon;
-        }
+        // }
 
     }, [socket]);
     return (
-        <div style={{ position: 'fixed', bottom: '0', width: '100%', height: '35%' }} ref={terminalRef} />
+        <div style={{height:"100%"}} ref={terminalRef} />
     )
 }
 

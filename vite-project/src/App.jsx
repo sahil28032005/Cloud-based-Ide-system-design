@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import TerminalComponent from './components/TerminalComponent';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import FileLister from './components/FileLister';
 import TextEditor from './components/TextEditor';
 import { io } from 'socket.io-client';
@@ -12,7 +12,7 @@ function App() {
   const [selectedFilePath, setSelectedFilePath] = useState('');
   const socketRef = useRef(null);
   const [isSocketReady, setIsSocketReady] = useState(false);
-  const { userId, setUserId } = useContext(UserContext);
+  const { userId } = useContext(UserContext);
   const [sidebarWidth, setSidebarWidth] = useState(250); // Default sidebar width
   const resizerRef = useRef(null);
   const isResizing = useRef(false);
@@ -87,8 +87,12 @@ function App() {
               ></div>
 
               <div className="content-area">
-                <TextEditor filePath={selectedFilePath} />
-                <TerminalComponent socket={socketRef.current} />
+                <div className="editor-container">
+                  <TextEditor filePath={selectedFilePath} />
+                </div>
+                <div className="terminal-container">
+                  <TerminalComponent socket={socketRef.current} />
+                </div>
               </div>
             </div>
           </>
