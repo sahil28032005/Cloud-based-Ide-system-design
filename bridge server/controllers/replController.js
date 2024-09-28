@@ -12,36 +12,41 @@ const docker = new Docker({
 
 //function for spinning docker containers
 const startDockerContainer = async (req, res, repl) => {
-    console.log("arrived inside start ocker container method");
+    console.log("arrived inside start docker container method");
     try {
-        // construct path to the users workspace directory
-        const userWorkspaceDir=path.join(USER_DATA_DIR, repl.owner.toString());
-        //here we have repl access of newly craeted repl by user
+        // Construct path to the user's workspace directory
+        const userWorkspaceDir = path.join(USER_DATA_DIR, repl.owner.toString());
+
+        // Here we have repl access of newly created repl by user
         const container = await docker.createContainer({
             Image: 'user_isolation',
             name: `repl-${repl._id}`,
-            Tty: true, //terminal intereaction enabled
-            Env: repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : [],
+            Tty: true, // Terminal interaction enabled
+            Env: [
+                `LANG=${repl.language}`, // Pass the language as an environment variable
+                ...repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : []
+            ],
             Labels: { replId: repl._id.toString() },
             HostConfig: {
                 Binds: [
                     // Bind mount the user's workspace directory into the container
-                    `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`  // Adjusted to mount to /workspace/userId inside the container
+                    `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`
                 ],
                 PortBindings: {
-                    '5000/tcp': [{ HostPort: '5000' }]  // This maps container port 5000 to host port 5001
+                    '5000/tcp': [{ HostPort: '5000' }] // This maps container port 5000 to host port 5000
                 }
             }
         });
+
         console.log("spinning isolated environment for user");
         await container.start();
         return container;
-    }
-    catch (err) {
+    } catch (err) {
         console.error("Error starting Docker container:", err);
         throw new Error(err.message);
     }
 }
+
 
 //for stopping docker container
 const stopDockerContainer = async (containerId) => {
