@@ -1,0 +1,100 @@
+
+.login-container {
+    background-color: #ffffff; /* White background for the form */
+    border-radius: 15px; /* Rounded corners */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); /* Shadow */
+    padding: 40px;
+    width: 400px; /* Fixed width for the form */
+    text-align: center; /* Centered text */
+    animation: fadeIn 0.5s ease; /* Fade-in animation */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+h1 {
+    margin-bottom: 20px; /* Space between title and form */
+    color: #333; /* Darker text color */
+    font-size: 24px; /* Title font size */
+}
+
+.input-field {
+    width: 100%; /* Full width */
+    padding: 12px; /* Padding */
+    margin: 10px 0; /* Margin for spacing */
+    border: 1px solid #ccc; /* Light border */
+    border-radius: 10px; /* Rounded corners */
+    font-size: 16px; /* Font size */
+    transition: border-color 0.3s; /* Smooth transition */
+}
+
+.input-field:focus {
+    border-color: #4e54c8; /* Border color on focus */
+    outline: none; /* Remove default outline */
+}
+
+.login-button {
+    width: 100%; /* Full width */
+    padding: 12px; /* Padding */
+    margin-top: 20px; /* Space above the button */
+    border: none; /* No border */
+    border-radius: 10px; /* Rounded corners */
+    background-color: #4e54c8; /* Blue background color */
+    color: white; /* White text color */
+    font-size: 16px; /* Font size */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s; /* Smooth transition */
+}
+
+.login-button:hover {
+    background-color: #3e43a8; /* Darker blue on hover */
+}
+
+.oauth-container {
+    margin-top: 20px; /* Space above OAuth buttons */
+}
+
+.oauth-button {
+    width: 100%; /* Full width */
+    padding: 12px; /* Padding */
+    margin: 10px 0; /* Margin for spacing */
+    border: none; /* No border */
+    border-radius: 10px; /* Rounded corners */
+    font-size: 16px; /* Font size */
+    cursor: pointer; /* Pointer cursor */
+    transition: all 0.3s; /* Smooth transition */
+    display: flex; /* Flex layout */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+}
+
+.google-button {
+    background-color: #db4437; /* Google color */
+    color: white; /* White text */
+}
+
+.github-button {
+    background-color: #333; /* GitHub color */
+    color: white; /* White text */
+}
+
+.oauth-button:hover {
+    opacity: 0.9; /* Slightly transparent on hover */
+}
+
+.footer {
+    margin-top: 20px;
+    font-size: 14px; /* Footer text size */
+    color: #777; /* Lighter text color */
+}
+
+.footer a {
+    color: #4e54c8; /* Link color */
+    text-decoration: none; /* No underline */
+}
+
+.footer a:hover {
+    text-decoration: underline; /* Underline on hover */
+}

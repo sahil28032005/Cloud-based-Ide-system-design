@@ -42,6 +42,8 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
     try {
+        console.log("email", email);
+        console.log("pass", password);
         const user = await User.findOne({ email: email });
         if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -51,7 +53,7 @@ exports.loginUser = async (req, res) => {
 
         //generate his token
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).json({ token });
+        res.status(200).json({ token: token, userId: user._id });
     }
     catch (err) {
         res.status(500).json({ message: err.message });

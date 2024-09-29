@@ -1,7 +1,9 @@
 const express = require('express');
 const PORT = process.env.PORT || 5002;
+const cors = require('cors'); // Import the cors modul
 const app = express();
 
+app.use(cors()); // Allow all origins (for development only)
 // Import Routes
 const userRoutes = require('./routes/userRoutes');
 const replRoutes = require('./routes/replRoutes');

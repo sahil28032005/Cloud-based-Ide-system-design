@@ -2,6 +2,7 @@ const Repl = require('../models//repl');
 const Docker = require('dockerode');
 const path = require('path');
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
+const mongoose = require('mongoose');
 const docker = new Docker({
     host: 'localhost',
     port: 2375, // Default port for Docker TCP API
@@ -115,3 +116,15 @@ exports.deleteRepl = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+//controller for fetch all repels related to single user
+exports.getRepels = async (req, res) => {
+    const { userId } = req.params;
+    try {
+       const repos = await Repl.find({ owner: new mongoose.Types.ObjectId(userId) });
+        res.json({ repos: repos });
+    }
+    catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}

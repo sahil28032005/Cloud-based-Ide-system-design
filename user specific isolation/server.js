@@ -258,9 +258,10 @@ function getAllFiles(dirPath, baseDir) {
     return tree;
 }
 app.get('/files', (req, res) => {
-    // const userId = req.query.userId;
-    console.log("inside getfiles", req.userId);
-    const userWorkspaceDir = path.join(__dirname, 'workspaces', req.userId);
+    const userId = req.query.userId;
+    // console.log("uid",req.userId);
+    console.log("inside getfiles", userId);
+    const userWorkspaceDir = path.join(__dirname, 'workspaces', userId);
     if (!fs.existsSync(userWorkspaceDir)) {
         return res.status(404).send('user directory not found');
     }
