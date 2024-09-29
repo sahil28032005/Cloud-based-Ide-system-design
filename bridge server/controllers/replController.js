@@ -10,6 +10,47 @@ const docker = new Docker({
     // ca: fs.readFileSync('/path/to/cert.pem'), // Use if TLS is enabled
 });
 
+//to connect with previously created docker container
+exports.connectToDockerContainer = async (req, res) => {
+    try {
+        const { replId } = req.params;
+        console.log("arrived replId: ", replId);
+        //find that repel
+        const repl = await Repl.findById(replId);
+        if (!repl) {
+            return res.status(404).json({ message: 'Repl not found' });
+        }
+        const containerId = repl.containerId;  // Retrieve the containerId
+        if (!containerId) {
+            return res.status(404).json({ message: 'Container not found for this Repl' });
+        }
+
+        //get the docker container instance
+        const container = docker.getContainer(containerId);
+
+        //check container state weather running or not
+        const containerInfo = await container.inspect();
+
+        if (containerInfo.State.Running) {
+            console.log(`Container ${containerId} is already running`);
+        } else {
+            // Start the container if it's not running
+            await container.start();
+            console.log(`Started container ${containerId}`);
+        }
+
+        // Send the container connection details back to the frontend
+        res.status(200).json({
+            success: true,
+            message: 'Connected to the container',
+            containerId: containerId,
+            // Include any other relevant details you might need
+        });
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+}
 
 //function for spinning docker containers
 const startDockerContainer = async (req, res, repl) => {
@@ -121,7 +162,7 @@ exports.deleteRepl = async (req, res) => {
 exports.getRepels = async (req, res) => {
     const { userId } = req.params;
     try {
-       const repos = await Repl.find({ owner: new mongoose.Types.ObjectId(userId) });
+        const repos = await Repl.find({ owner: new mongoose.Types.ObjectId(userId) });
         res.json({ repos: repos });
     }
     catch (err) {

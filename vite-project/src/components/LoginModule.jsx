@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const { setUserId } = useContext(UserContext);
+    const { userId, setUserId } = useContext(UserContext);
     const navigate = useNavigate(); // Initialize the useNavigate hook
 
     const handleLogin = async (event) => {
@@ -22,11 +22,11 @@ const Login = () => {
             });
 
             if (response.status == 200) {
-                setUserId(response.data.userId);
+                await setUserId(response.data.userId);
                 console.log('Logged in successfully:', response.data);
 
                 //redirect to repels displayer page
-                navigate("/");
+                navigate(`/repos/${userId}`);
             }
             else {
                 console.error('Login failed:', response.statusText);

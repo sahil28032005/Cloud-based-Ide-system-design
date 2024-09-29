@@ -7,6 +7,7 @@ import { io } from 'socket.io-client';
 import LoginModule from './components/LoginModule';
 import { UserContext } from '../context/UserContextComponent';
 import './App.css'; // Assuming you add styles here
+import Repos from './components/Repos';
 
 function App() {
   const [selectedFilePath, setSelectedFilePath] = useState('');
@@ -97,7 +98,9 @@ function App() {
             </div>
           </>
         } />
+         <Route path="/repos/:userId" element={<Repos />} />
       </Routes>
+
     </Router>
   );
 }
