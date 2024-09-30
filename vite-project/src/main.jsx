@@ -5,10 +5,10 @@ import  UserContextComponent  from '../context/UserContextComponent.jsx'
 // import './index.css'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  // <StrictMode>
     <UserContextComponent>
       <App />
     </UserContextComponent>
 
-  </StrictMode>,
+  // {/* </StrictMode>, */}
 )

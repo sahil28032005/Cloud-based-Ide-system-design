@@ -8,7 +8,17 @@
     text-align: center; /* Centered text */
     animation: fadeIn 0.5s ease; /* Fade-in animation */
 }
-
+@keyframes typing {
+    0% { width: 0; }
+    100% { width: 100%; }
+  }
+  
+  .typing-animation {
+    overflow: hidden; /* Ensures the text is clipped */
+    white-space: nowrap; /* Prevents the text from wrapping */
+    animation: typing 3s steps(30, end) forwards; /* Adjust timing and steps as necessary */
+  }
+  
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -19,7 +29,28 @@ h1 {
     color: #333; /* Darker text color */
     font-size: 24px; /* Title font size */
 }
-
+.bg-gray-850 {
+    background-color: #1f1f1f; /* Darker gray background for the auth box */
+  }
+  
+  .typing-animation {
+    /* Example animation for typing effect */
+    animation: typing 2s steps(30, end), blink-caret 0.75s step-end infinite;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 2px solid white;
+  }
+  
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+  
+  @keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: white; }
+  }
+  
 .input-field {
     width: 100%; /* Full width */
     padding: 12px; /* Padding */

@@ -4,6 +4,14 @@
   padding: 2rem;
   text-align: center;
 } */
+/* In your global CSS file */
+button {
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
 
 
 .logo {
@@ -12,7 +20,7 @@
   will-change: filter;
   transition: filter 300ms;
 }
-
+z
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }

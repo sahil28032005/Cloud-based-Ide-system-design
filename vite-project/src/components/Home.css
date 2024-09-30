@@ -1,0 +1,19 @@
+/* Home.css */
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+  }
+  
+  h1, h2, h3, p {
+    margin: 0;
+    line-height: 1.5;
+  }
+  
+  button {
+    cursor: pointer;
+  }
+  
+  .bg-gradient-to-br {
+    background: linear-gradient(to bottom right, var(--tw-gradient-stops));
+  }
+  
