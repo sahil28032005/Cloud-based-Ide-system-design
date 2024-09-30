@@ -70,10 +70,10 @@ const startDockerContainer = async (req, res, repl) => {
             ],
             Labels: { replId: repl._id.toString() },
             HostConfig: {
-                Binds: [
-                    // Bind mount the user's workspace directory into the container
-                    `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`
-                ],
+                // Binds: [
+                //     // Bind mount the user's workspace directory into the container
+                //     `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`
+                // ],
                 PortBindings: {
                     '5000/tcp': [{ HostPort: '5000' }] // This maps container port 5000 to host port 5000
                 }
@@ -88,6 +88,40 @@ const startDockerContainer = async (req, res, repl) => {
         throw new Error(err.message);
     }
 }
+//select contaner for stopping as per appropriate repel
+const decideStoppingContainer = async (req, res) => {
+    try {
+        const { replId } = req.body;
+
+        //find container id through repl id by performing validators for repls
+        const repl = await Repl.findById(replId);
+        if (!repl) {
+            return res.status(404).json({ message: 'Repl not found' });
+        }
+        const containerId = repl.containerId;  // Retrieve the containerId
+        if (!containerId) {
+            return res.status(404).json({ message: 'Container not found for this Repl' });
+        }
+
+        //get the docker container instance
+        const container = docker.getContainer(containerId);
+
+        //check container state weather running or not
+        const containerInfo = await container.inspect();
+
+        //here we have that container acccess
+        if (containerInfo.State.Running) {
+            //now here we find that container is running and we have to stop them
+            await stopDockerContainer(container.id);
+            console.log('container stopped successfully');
+            return res.status(200).send({ message: 'Container stopped successfully' });
+        }
+        return res.satus(301).send('api problem for stopping contaainer');
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+}
 
 
 //for stopping docker container
@@ -95,7 +129,7 @@ const stopDockerContainer = async (containerId) => {
     try {
         const container = docker.getContainer(containerId);
         await container.stop();
-        await container.remove();
+        // await container.remove();
     } catch (error) {
         console.error('Error stopping container:', error);
         throw new Error('Failed to stop Docker container');
