@@ -3,6 +3,9 @@ import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { io } from 'socket.io-client';
 import 'xterm/css/xterm.css';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 
 const TerminalComponent = ({ socket }) => {
     console.log("socket instance", socket);
@@ -13,6 +16,9 @@ const TerminalComponent = ({ socket }) => {
     const visible = useRef(false);
     const commandBuffer = useRef('');
     const ref = useRef(0);
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const replId = params.get('replId');
 
     //related useEffetcts
     useEffect(() => {
@@ -55,19 +61,27 @@ const TerminalComponent = ({ socket }) => {
 
     useEffect(() => {
         console.log("terminal mounted currently");
-        return () => {
+        return async () => {
             //this return method will know about component unmount
             console.log("component gonna unmount are you sure?");
             console.log("incrementing ref");
             ref.current = ref.current + 1;
 
             //logic for cleanup like stopping user container by persisting their codes
-            
+            console.log("making post request");
+            const response = await axios.post(`http://localhost:5002/api/repls/stop-by-repel`, { replId: replId });
+            console.log("post request done");
+            if (response.data.success) {
+                //means container stipped correctly
+                console.log("destroyed...");
+                confirm("your workspace will be saved automatically.....");
+            }
         };
     }, []);
     return (
         <>
             {console.log("current ref value", ref.current)}
+            {console.log("current replIdr", replId)}
             <div style={{ height: "100%" }} ref={terminalRef} />
         </>
 

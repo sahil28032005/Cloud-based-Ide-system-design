@@ -47,10 +47,10 @@ const TextEditor = ({ filePath }) => {
     };
 
     //monaco custom function
-    // function handleEditorChange(value, event) {
-    //     // here is the current value
-    //     console.log("value:", value);
-    // }
+    const handleEditorChange = (value, event) => {
+        setContent(value); // Update the content with the current value of the editor
+        handleSave(); // Save the
+    };
     // //contains all information about editor such as typing events ,arrow keys events and keeps track of it
     // function handleEditorDidMount(editor, monaco) {
     //     console.log('onMount: the editor instance:', editor);
@@ -92,39 +92,45 @@ const TextEditor = ({ filePath }) => {
         //         className="custom-editor"
         //     />
         // </div>
-        <Editor
-            height="100vh" // Fullscreen editor
-            defaultLanguage="javascript"
-            defaultValue="// Start coding here..."
-            theme="vs-dark" // Use dark theme
-            options={{
-                fontFamily: 'Fira Code, monospace',
-                fontSize: 16,
-                fontLigatures: true,
-                smoothScrolling: true,
-                cursorSmoothCaretAnimation: true,
-                cursorBlinking: 'smooth',
-                minimap: {
-                    enabled: true,
-                    showSlider: 'always',
-                },
-                scrollbar: {
-                    verticalScrollbarSize: 8,
-                    horizontalScrollbarSize: 8,
-                },
-                padding: {
-                    top: 20,
-                    bottom: 20,
-                },
-                bracketPairColorization: true,
-                autoClosingBrackets: 'always',
-                autoClosingQuotes: 'always',
-                tabSize: 2,
-                wordWrap: 'on',
-                overviewRulerBorder: false,
-            }}
-            onMount={handleEditorDidMount}
-        />
+        <>
+            <Editor
+
+                height="100vh" // Fullscreen editor
+                defaultLanguage="javascript"
+                defaultValue={content}
+                theme="vs-dark" // Use dark theme
+                options={{
+                    fontFamily: 'Fira Code, monospace',
+                    fontSize: 16,
+                    fontLigatures: true,
+                    smoothScrolling: true,
+                    cursorSmoothCaretAnimation: true,
+                    cursorBlinking: 'smooth',
+                    minimap: {
+                        enabled: true,
+                        showSlider: 'always',
+                    },
+                    scrollbar: {
+                        verticalScrollbarSize: 8,
+                        horizontalScrollbarSize: 8,
+                    },
+                    padding: {
+                        top: 20,
+                        bottom: 20,
+                    },
+                    bracketPairColorization: true,
+                    autoClosingBrackets: 'always',
+                    autoClosingQuotes: 'always',
+                    tabSize: 2,
+                    wordWrap: 'on',
+                    overviewRulerBorder: false,
+                }}
+                onChange={handleEditorChange} // Update content on change
+                onMount={handleEditorDidMount}
+            />
+            {console.log("fpth",filePath)}
+        </>
+
     );
 };
 

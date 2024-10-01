@@ -89,10 +89,10 @@ const startDockerContainer = async (req, res, repl) => {
     }
 }
 //select contaner for stopping as per appropriate repel
-const decideStoppingContainer = async (req, res) => {
+exports.decideStoppingContainer = async (req, res) => {
     try {
         const { replId } = req.body;
-
+        console.log("arrived replid", replId);
         //find container id through repl id by performing validators for repls
         const repl = await Repl.findById(replId);
         if (!repl) {
@@ -114,7 +114,7 @@ const decideStoppingContainer = async (req, res) => {
             //now here we find that container is running and we have to stop them
             await stopDockerContainer(container.id);
             console.log('container stopped successfully');
-            return res.status(200).send({ message: 'Container stopped successfully' });
+            return res.status(200).send({ success: true, message: 'Container stopped successfully' });
         }
         return res.satus(301).send('api problem for stopping contaainer');
     }
@@ -152,7 +152,7 @@ exports.createRepl = async (req, res) => {
         await newRepl.save();
         console.log("repel was saved");
         // Respond with the created Repl data
-        return res.status(200).json(newRepl);
+        return res.status(200).json({ success: true, repl: newRepl });
     }
     catch (err) {
         return res.status(401).send({ message: err.message });

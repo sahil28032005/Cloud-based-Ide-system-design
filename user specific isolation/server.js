@@ -278,7 +278,7 @@ app.post('/write-file', (req, res) => {
     try {
         const { filePath, content } = req.body;
         const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
-        // console.log("writer path: " + fullPath);
+        console.log("writer path: " ,fullPath);
         console.log("made final write path as", fullPath);
         //write arrived content using fs writer module
         fs.writeFile(fullPath, content, (error) => {

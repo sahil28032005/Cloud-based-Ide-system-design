@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card'; // Shadcn Card component
-import { Button } from '@/components/ui/button'; // Shadcn Button component
-import { Skeleton } from '@/components/ui/skeleton'; // Shadcn Skeleton component
-import { Input } from '@/components/ui/input'; // Shadcn Input component
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'; // Shadcn Dialog component for modal
-import Navbar from './Navbar'; // Assuming you have a Navbar component
-import './Repos.css'; // Optional: custom styling
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select'; // Shadcn Select component
+import Navbar from './Navbar';
+import './Repos.css';
 
 const Repos = () => {
     const { userId } = useParams();
@@ -17,6 +18,7 @@ const Repos = () => {
     const [error, setError] = useState(null);
     const [isCreateRepoOpen, setIsCreateRepoOpen] = useState(false);
     const [newRepoName, setNewRepoName] = useState('');
+    const [selectedLanguage, setSelectedLanguage] = useState(''); // To store the selected language
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -38,7 +40,7 @@ const Repos = () => {
         try {
             const response = await axios.post(`http://localhost:5002/api/repls/connect-container/${replId}`);
             if (response.data.success) {
-                navigate(`/?userId=${userId}`);
+                navigate(`/?userId=${userId}&replId=${replId}`);
             } else {
                 console.error('Failed to connect to the container:', response.data.message);
             }
@@ -48,13 +50,25 @@ const Repos = () => {
     };
 
     const handleCreateRepo = async () => {
-        if (!newRepoName) return;
+        if (!newRepoName || !selectedLanguage) return;
         try {
-            const response = await axios.post(`http://localhost:5002/api/repls/${userId}/create-repo`, { name: newRepoName });
+            const token = localStorage.getItem('token');
+            const response = await axios.post(`http://localhost:5002/api/repls/create-repel`, {
+                name: newRepoName,
+                language: selectedLanguage,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}` // Pass Bearer token here
+                }
+            });
             if (response.data.success) {
                 setRepos([...repos, response.data.repo]);
                 setIsCreateRepoOpen(false); // Close modal
                 setNewRepoName(''); // Reset input
+                setSelectedLanguage(''); // Reset language selection
+            }
+            else {
+                alert("something wrong!");
             }
         } catch (err) {
             console.error('Error creating repository:', err);
@@ -63,7 +77,6 @@ const Repos = () => {
 
     return (
         <div className="repos-container bg-gray-900 text-white min-h-screen">
-            {/* Navbar */}
             <Navbar />
 
             <div className="container mx-auto p-8">
@@ -119,6 +132,20 @@ const Repos = () => {
                         onChange={(e) => setNewRepoName(e.target.value)}
                         className="mb-4 p-4 text-lg bg-gray-800 border border-gray-700 rounded-lg text-white"
                     />
+                    <Select onValueChange={(value) => setSelectedLanguage(value)}>
+                        <SelectTrigger className="mb-4 p-4 bg-gray-800 border border-gray-700 rounded-lg text-white">
+                            {selectedLanguage || 'Select Repository Type'}
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="java">Java</SelectItem>
+                            <SelectItem value="cpp">C++</SelectItem>
+                            <SelectItem value="python">Python</SelectItem>
+                            <SelectItem value="rust">Rust</SelectItem>
+                            <SelectItem value="html_css_js">HTML, CSS, JS</SelectItem>
+                            <SelectItem value="nodejs">Node js</SelectItem>
+                            {/* Add more languages or frameworks as needed */}
+                        </SelectContent>
+                    </Select>
                     <Button onClick={handleCreateRepo} className="bg-blue-600 hover:bg-blue-700 w-full text-lg py-2 rounded-lg">
                         Create
                     </Button>

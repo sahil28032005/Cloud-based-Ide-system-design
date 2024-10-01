@@ -9,7 +9,7 @@ const replSchema = new Schema({
   },
   name: { type: String, required: true },                    // Name of the Repl (e.g., "My Python App")
   description: { type: String },                             // Optional description
-  containerId: { type: String, required: true },             // Docker container ID
+  containerId: { type: String},             // Docker container ID
   language: { type: String, required: true },                // Programming language (e.g., Python, Node.js)
   version: { type: String },                                 // Language version (e.g., "14.17.0" for Node.js)
   environment: {                                             // Environment variables for the container
