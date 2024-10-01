@@ -97,7 +97,7 @@ const Repos = () => {
     return (
         <TooltipProvider> {/* Wrap your content with TooltipProvider */}
             <div className="repos-container bg-gray-950 text-white min-h-screen transition-colors duration-300">
-                <Navbar />
+                {/* <Navbar /> */}
 
                 <div className="container mx-auto p-8">
                     <div className="flex justify-between items-center mb-8">

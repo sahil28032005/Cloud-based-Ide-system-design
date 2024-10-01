@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import { UserContext } from '../../context/UserContextComponent';
-import { FaFolder, FaFolderOpen, FaFile } from 'react-icons/fa'; // Import icons
+import { FaFolder, FaFolderOpen, FaFile } from 'react-icons/fa';
+import { Tooltip } from "@/components/ui/tooltip";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const FileLister = ({ onSelect, socket }) => {
     const { userId } = useContext(UserContext);
@@ -37,36 +40,30 @@ const FileLister = ({ onSelect, socket }) => {
             <ul style={{ paddingLeft: depth * 15, listStyle: 'none', margin: 0 }}>
                 {Object.keys(tree).map(key => {
                     const currentPath = path + key;
-                    const isFolder = typeof tree[key] === 'object' && Object.keys(tree[key]).length > 0; // Check if it's a folder
+                    const isFolder = typeof tree[key] === 'object' && Object.keys(tree[key]).length > 0;
                     const isExpanded = expandedFolders[currentPath];
 
                     return (
                         <li key={key} style={{ margin: '5px 0' }}>
-                            <div
-                                onClick={() => {
-                                    isFolder ? toggleFolder(currentPath) : handleFileClick(currentPath);
-                                }}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    cursor: 'pointer',
-                                    padding: '5px 10px',
-                                    borderRadius: '4px',
-                                    backgroundColor: isFolder ? (isExpanded ? '#f0f0f0' : '#fafafa') : '#ffffff',
-                                    transition: 'background-color 0.2s',
-                                    color: isFolder ? '#007acc' : '#333',
-                                    fontWeight: isFolder ? 'bold' : 'normal'
-                                }}
-                                onMouseOver={e => (e.currentTarget.style.backgroundColor = '#e6f7ff')}
-                                onMouseOut={e => (e.currentTarget.style.backgroundColor = isFolder && isExpanded ? '#f0f0f0' : '#fafafa')}
-                            >
-                                {isFolder ? (
-                                    isExpanded ? <FaFolderOpen style={{ marginRight: 5 }} /> : <FaFolder style={{ marginRight: 5 }} />
-                                ) : (
-                                    <FaFile style={{ marginRight: 5 }} />
-                                )}
-                                {key}
-                            </div>
+                            <Tooltip content={isFolder ? "Open Folder" : "Open File"}>
+                                <div
+                                    onClick={() => {
+                                        isFolder ? toggleFolder(currentPath) : handleFileClick(currentPath);
+                                    }}
+                                    className={`flex items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${
+                                        isFolder ? (isExpanded ? "bg-gray-700" : "bg-gray-800") : "bg-gray-600"
+                                    }`}
+                                    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#444')}
+                                    onMouseOut={e => (e.currentTarget.style.backgroundColor = isFolder && isExpanded ? '#333' : '#222')}
+                                >
+                                    {isFolder ? (
+                                        isExpanded ? <FaFolderOpen className="mr-2 text-orange-400" /> : <FaFolder className="mr-2 text-orange-300" />
+                                    ) : (
+                                        <FaFile className="mr-2 text-lime-400" />
+                                    )}
+                                    <span className="text-white">{key}</span>
+                                </div>
+                            </Tooltip>
                             {isFolder && isExpanded && renderFileTree(tree[key], depth + 1, currentPath + '/')}
                         </li>
                     );
@@ -76,17 +73,13 @@ const FileLister = ({ onSelect, socket }) => {
     };
 
     return (
-        <div style={{
-            padding: '10px',
-            background: '#2d2d2d', 
-            color: '#eaeaea', 
-            height: '100%', 
-            overflowY: 'auto', 
-            borderRight: '1px solid #444',
-            fontFamily: 'monospace'
-        }}>
-            {renderFileTree(fileTree)}
-        </div>
+        <Card className="bg-gray-900 text-white h-full overflow-hidden">
+            <ScrollArea className="h-full">
+                <div style={{ padding: '10px', fontFamily: 'monospace' }}>
+                    {renderFileTree(fileTree)}
+                </div>
+            </ScrollArea>
+        </Card>
     );
 };
 

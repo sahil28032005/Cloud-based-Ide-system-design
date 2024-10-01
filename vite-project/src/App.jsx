@@ -1,25 +1,29 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import TerminalComponent from './components/TerminalComponent';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+
+import TerminalComponent from './components/TerminalComponent';
 import FileLister from './components/FileLister';
 import TextEditor from './components/TextEditor';
-import { io } from 'socket.io-client';
 import LoginModule from './components/LoginModule';
-import { UserContext } from '../context/UserContextComponent';
-import './App.css'; // Your styles
 import Repos from './components/Repos';
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card"; // Shadcn Card component
-import Navbar from './components/Navbar'; // Adjust this if needed
-import './index.css';
+import Navbar from './components/Navbar';
 import Home from './components/Home';
+
+import { UserContext } from '../context/UserContextComponent';
+import { Button } from "@/components/ui/button"; // This should work if the export is correct
+import { Tooltip } from "@/components/ui/tooltip"; // Import Shadcn tooltip
+import { Card } from "@/components/ui/card"; // Import Shadcn card
+import './App.css'; // Your styles
+import './index.css'; // Global styles
 
 function App() {
     const [selectedFilePath, setSelectedFilePath] = useState('');
     const socketRef = useRef(null);
     const [isSocketReady, setIsSocketReady] = useState(false);
     const { userId } = useContext(UserContext);
-    const [sidebarWidth, setSidebarWidth] = useState(300); // Increased default sidebar width
+    const [sidebarWidth, setSidebarWidth] = useState(300);
     const resizerRef = useRef(null);
     const isResizing = useRef(false);
 
@@ -53,7 +57,7 @@ function App() {
     const resizeSidebar = (e) => {
         if (isResizing.current) {
             const newWidth = e.clientX;
-            if (newWidth > 200 && newWidth < 600) { // Adjusted min/max sidebar width
+            if (newWidth > 200 && newWidth < 600) {
                 setSidebarWidth(newWidth);
             }
         }
@@ -66,60 +70,69 @@ function App() {
     };
 
     return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={<LoginModule />} />
-                <Route path="/" element={
-                    <>
-                        <Navbar />
+        <TooltipProvider>
+            <Router>
+                <div className="bg-gray-900 min-h-screen p-4">
+                    <Navbar />
+                    <Routes>
+                        <Route path="/login" element={<LoginModule />} />
+                        <Route path="/" element={
+                            <>
+                                <div className="flex bg-gray-800 min-h-screen">
+                                    {/* Sidebar for file lister */}
+                                    <div
+                                        className="bg-gray-900 shadow-lg"
+                                        style={{ width: `${sidebarWidth}px` }}
+                                    >
+                                        <FileLister onSelect={handleSelection} socket={socketRef.current} />
+                                    </div>
 
-                        <div className="flex bg-gray-800 min-h-screen">
-                            {/* Sidebar for file lister */}
-                            <div
-                                className="bg-gray-900 shadow-lg"
-                                style={{ width: `${sidebarWidth}px` }}
-                            >
-                                <FileLister onSelect={handleSelection} socket={socketRef.current} />
-                            </div>
+                                    <div
+                                        ref={resizerRef}
+                                        className="resizer cursor-ew-resize w-1 bg-gray-700"
+                                        onMouseDown={startResizing}
+                                    ></div>
 
-                            <div
-                                ref={resizerRef}
-                                className="resizer cursor-ew-resize w-1 bg-gray-700"
-                                onMouseDown={startResizing}
-                            ></div>
+                                    {/* Main Content Area */}
+                                    <div className="flex-1 p-4 flex flex-col">
+                                        {/* Toolbar for Text Editor */}
+                                        <div className="flex justify-between mb-4">
+                                            <Tooltip content="Run your code!" side="top">
+                                                <Button variant="outline" className="bg-blue-600 hover:bg-blue-500 transition-all">Run</Button>
+                                            </Tooltip>
+                                            <Tooltip content="Save your changes!" side="top">
+                                                <Button variant="outline" className="bg-blue-600 hover:bg-blue-500 transition-all">Save</Button>
+                                            </Tooltip>
+                                            <Tooltip content="Create a new file!" side="top">
+                                                <Button variant="outline" className="bg-blue-600 hover:bg-blue-500 transition-all">New File</Button>
+                                            </Tooltip>
+                                        </div>
 
-                            {/* Main Content Area */}
-                            <div className="flex-1 p-4 flex flex-col">
-                                {/* Toolbar for Text Editor */}
-                                <div className="flex justify-between mb-4">
-                                    <Button variant="outline" className="mr-2">Run</Button>
-                                    <Button variant="outline" className="mr-2">Save</Button>
-                                    <Button variant="outline">New File</Button>
+                                        <div className="flex flex-grow">
+                                            {/* Text Editor */}
+                                            <Card className="bg-gray-800 flex-grow p-4 rounded-lg shadow-md">
+                                                <h2 className="text-2xl font-bold text-white mb-4">Code Editor</h2>
+                                                <TextEditor filePath={selectedFilePath} />
+                                            </Card>
+
+                                            {/* Terminal */}
+                                            <div className="w-1 bg-gray-700 mx-2"></div> {/* Divider */}
+
+                                            <Card className="bg-gray-800 flex-shrink-0 w-1/3 p-4 rounded-lg shadow-md">
+                                                <h2 className="text-2xl font-bold text-white mb-4">Terminal</h2>
+                                                <TerminalComponent socket={socketRef.current} />
+                                            </Card>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                <div className="flex flex-grow">
-                                    {/* Text Editor */}
-                                    <Card className="bg-gray-800 flex-grow p-4 rounded-lg shadow-md">
-                                        <h2 className="text-2xl font-bold text-white mb-4">Code Editor</h2>
-                                        <TextEditor filePath={selectedFilePath} />
-                                    </Card>
-
-                                    {/* Terminal */}
-                                    <div className="w-1 bg-gray-700 mx-2"></div> {/* Divider */}
-
-                                    <Card className="bg-gray-800 flex-shrink-0 w-1/3 p-4 rounded-lg shadow-md">
-                                        <h2 className="text-2xl font-bold text-white mb-4">Terminal</h2>
-                                        <TerminalComponent socket={socketRef.current} />
-                                    </Card>
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                } />
-                <Route path="/repos/:userId" element={<Repos />} />
-                <Route path="/home" element={<Home />} />
-            </Routes>
-        </Router>
+                            </>
+                        } />
+                        <Route path="/repos/:userId" element={<Repos />} />
+                        <Route path="/home" element={<Home />} />
+                    </Routes>
+                </div>
+            </Router>
+        </TooltipProvider>
     );
 }
 
