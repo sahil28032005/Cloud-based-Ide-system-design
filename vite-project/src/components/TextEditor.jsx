@@ -97,7 +97,7 @@ const TextEditor = ({ filePath }) => {
 
                 height="100vh" // Fullscreen editor
                 defaultLanguage="javascript"
-                defaultValue={content}
+                value={content}
                 theme="vs-dark" // Use dark theme
                 options={{
                     fontFamily: 'Fira Code, monospace',

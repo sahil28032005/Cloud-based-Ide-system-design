@@ -61,13 +61,13 @@ const startDockerContainer = async (req, res, repl) => {
 
         // Here we have repl access of newly created repl by user
         const container = await docker.createContainer({
-            Image: 'user_isolation',
+            Image: `user_isolation_${repl.language}`,
             name: `repl-${repl._id}`,
             Tty: true, // Terminal interaction enabled
-            Env: [
-                `LANG=${repl.language}`, // Pass the language as an environment variable
-                ...repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : []
-            ],
+            // Env: [
+            //     `LANG=${repl.language}`, // Pass the language as an environment variable
+            //     ...repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : []
+            // ],
             Labels: { replId: repl._id.toString() },
             HostConfig: {
                 // Binds: [

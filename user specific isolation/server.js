@@ -274,7 +274,7 @@ app.get('/files', (req, res) => {
 
 
 //route that acceots file writer requests to specified path
-app.post('/write-file', (req, res) => {
+app.post('/write-file',extractUserId, (req, res) => {
     try {
         const { filePath, content } = req.body;
         const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
