@@ -44,6 +44,44 @@ function App() {
             };
         }
     }, [userId]);
+    //run button click hanndler
+    const handleRun = async () => {
+        if (!selectedFilePath) return;
+
+        //otherwise send api request run code to the socket
+        try {
+            //just emit the socket emit event that we have defuned for run butti =n command
+            socketRef.current.emit('run_code', {
+                filePath: selectedFilePath,
+                language: detectLanguage(selectedFilePath),
+            });
+
+            socketRef.current.on('terminal:data', (output) => {
+                console.log(output);
+                // Here, add logic to display output in your terminal UI
+            });
+        }
+        catch (err) {
+            console.error(err);
+        }
+    }
+
+    //detect lamnguage based on file type
+    const detectLanguage = (filePath) => {
+        if (filePath.endsWith('.java')) {
+            return 'java'
+        }
+        else if (filePath.endsWith('.cpp')) {
+            return 'cpp'
+        }
+        else if (filePath.endsWith('.js')) {
+            return 'nodejs'
+        }
+        else if (filePath.endsWith('package.json')) {
+            //will be doone later
+        }
+        return null;
+    }
 
     const handleSelection = (path) => {
         setSelectedFilePath(path);
@@ -98,9 +136,10 @@ function App() {
                                     {/* Main Content Area */}
                                     <div className="flex-1 p-4 flex flex-col">
                                         {/* Toolbar for Text Editor */}
+                                        {console.log("selected", selectedFilePath)}
                                         <div className="flex justify-between mb-4">
                                             <Tooltip content="Run your code!" side="top">
-                                                <Button variant="outline" className="bg-blue-600 hover:bg-blue-500 transition-all">Run</Button>
+                                                <Button onClick={handleRun} variant="outline" className="bg-blue-600 hover:bg-blue-500 transition-all">Run</Button>
                                             </Tooltip>
                                             <Tooltip content="Save your changes!" side="top">
                                                 <Button variant="outline" className="bg-blue-600 hover:bg-blue-500 transition-all">Save</Button>

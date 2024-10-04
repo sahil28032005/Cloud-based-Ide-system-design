@@ -111,13 +111,13 @@ io.on('connection', (socket) => {
 
             //here user needs to be mapped with his workspace which is newly created using same helper function as used in else part
             // setupUserConnection(socket, userId, userWorkspaceDir); //no need because after folder generation user must login and create repository and then connect
-            
+
         }
-        else{
+        else {
             console.log(`Directory already exists for user ${userId}`);
             setupUserConnection(socket, userId, userWorkspaceDir);
         }
-        
+
     }
 
     // //store userId inside socket
@@ -216,10 +216,45 @@ function setupUserConnection(socket, userId, userWorkspaceDir) {
         io.emit('terminal:data', data);
     });
     //takes command for execution and write in it actuall terminal of docker containers terminal insted of using ssh
-    
+
     socket.on('chat_message', (msg) => {
         console.log('Message received:', msg);
         ptyProcess.write(`${msg}\r`);
+    });
+
+    // Handle code execution requests
+    socket.on('run_code', (data) => {
+        const { filePath, language } = data;
+        console.log('arrived language through run button:', language);
+        let command = '';
+
+        // Determine the command based on the language/environment
+        switch (language) {
+            case 'java':
+                // Determine the appropriate command structure based on the environment
+                if (process.platform === 'win32') {
+                    // For Windows (PowerShell)
+                    command = `javac ${filePath}; java ${filePath.replace('.java', '')}`;
+                } else {
+                    // For Unix/Linux/Mac (Bash)
+                    command = `javac ${filePath} && java ${filePath.replace('.java', '')}`;
+                }
+                break;
+            case 'cpp':
+                command = `g++ ${filePath} -o output && ./output`;
+                break;
+            case 'nodejs':
+                command = `node ${filePath}`;
+                break;
+            case 'react':
+                command = `npm start`;
+                break;
+            default:
+                return socket.emit('terminal:data', { error: 'Unsupported language' });
+        }
+
+        // Write the command to the pty process to execute it
+        ptyProcess.write(`${command}\r`);
     });
 
     const watcher = chokidar.watch(userWorkspaceDir, {
@@ -274,11 +309,11 @@ app.get('/files', (req, res) => {
 
 
 //route that acceots file writer requests to specified path
-app.post('/write-file',extractUserId, (req, res) => {
+app.post('/write-file', extractUserId, (req, res) => {
     try {
         const { filePath, content } = req.body;
         const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
-        console.log("writer path: " ,fullPath);
+        console.log("writer path: ", fullPath);
         console.log("made final write path as", fullPath);
         //write arrived content using fs writer module
         fs.writeFile(fullPath, content, (error) => {
@@ -330,6 +365,9 @@ function emitFileStructure(userWorkspaceDir) {
     const files = getAllFiles(userWorkspaceDir, userWorkspaceDir);
     io.emit('file-structure-update', files);
 }
+
+
+
 
 server.listen(PORT, () => {
     console.log(`server listening on port ${PORT}`);
