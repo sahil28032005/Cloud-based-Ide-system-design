@@ -10,13 +10,16 @@ import { useNavigate } from 'react-router-dom';
 const AuthPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { userId, setUserId,setToken } = useContext(UserContext);
+  const { userId, setUserId, setToken } = useContext(UserContext);
   const [email, setEmail] = useState(''); // Added state for email
   const [isSignUp, setIsSignUp] = useState(false); // State to toggle between login and signup
   const navigate = useNavigate(); // Initialize the useNavigate hook
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async() => {
     // Add Google sign-in logic here
+    window.location.href = 'http://localhost:5002/auth/google';
+    // const response = await axios.get('http://localhost:5002/auth/google');// Include cookies if you are using sessions
+    
   };
 
   const handleGithubSignIn = () => {
@@ -38,7 +41,7 @@ const AuthPage = () => {
       if (response.status == 200) {
         await setUserId(response.data.userId);
         await setToken(response.data.token);
-        
+
         console.log('Logged in successfully:', response.data);
 
         //redirect to repels displayer page

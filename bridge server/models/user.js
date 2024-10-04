@@ -4,7 +4,7 @@ const Repl=require('./repl');
 const userSchema = new Schema({
   username: { type: String, required: true, unique: true },  // Username (unique)
   email: { type: String, required: true, unique: true },     // Email for login
-  password: { type: String, required: true },                // Hashed password
+  password: { type: String },                // Hashed password
   avatar: { type: String },                                  // Profile picture URL
   role: { type: String, enum: ['user', 'admin'], default: 'user' },  // Role (user or admin)
   plan: { type: String, enum: ['free', 'pro'], default: 'free' },    // Free or paid plan

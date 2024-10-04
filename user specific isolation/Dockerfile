@@ -22,16 +22,17 @@ RUN npm install --no-cache
 RUN npm install node-pty@latest
 
 # Copy the entrypoint script into the image
-COPY entrypoint.sh /usr/src/app/entrypoint.sh
+# COPY entrypoint.sh /usr/src/app/entrypoint.sh
 
 # Make the entrypoint script executable
-RUN chmod +x /usr/src/app/entrypoint.sh
+# RUN chmod +x /usr/src/app/entrypoint.sh
 
 # Set the entrypoint to your script
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+# ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 
 # Expose the port that your app runs on
 EXPOSE 5000
+EXPOSE 3000
 
 # Copy the rest of your application code
 COPY . .

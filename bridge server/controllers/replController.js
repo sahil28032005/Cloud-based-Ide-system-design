@@ -9,7 +9,7 @@ const docker = new Docker({
     // Uncomment the following line if you're using TLS
     // ca: fs.readFileSync('/path/to/cert.pem'), // Use if TLS is enabled
 });
-
+//build 2 will start from tommorow
 //to connect with previously created docker container
 exports.connectToDockerContainer = async (req, res) => {
     try {
@@ -75,8 +75,9 @@ const startDockerContainer = async (req, res, repl) => {
                 //     `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`
                 // ],
                 PortBindings: {
-                    '5000/tcp': [{ HostPort: '5000' }] // This maps container port 5000 to host port 5000
-                }
+                    '3000/tcp': [{ HostPort: '3000' }],
+                    '5000/tcp': [{ HostPort: '5000' }],
+                    }
             }
         });
 

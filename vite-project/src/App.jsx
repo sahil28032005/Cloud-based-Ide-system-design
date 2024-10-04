@@ -17,6 +17,7 @@ import { Tooltip } from "@/components/ui/tooltip"; // Import Shadcn tooltip
 import { Card } from "@/components/ui/card"; // Import Shadcn card
 import './App.css'; // Your styles
 import './index.css'; // Global styles
+import AuthCallback from './components/AuthCallback';
 
 function App() {
     const [selectedFilePath, setSelectedFilePath] = useState('');
@@ -75,6 +76,7 @@ function App() {
                 <div className="bg-gray-900 min-h-screen p-4">
                     <Navbar />
                     <Routes>
+                        <Route path="/auth/callback" element={<AuthCallback />} />
                         <Route path="/login" element={<LoginModule />} />
                         <Route path="/" element={
                             <>
