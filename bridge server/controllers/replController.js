@@ -229,6 +229,34 @@ exports.decideStoppingContainer = async (req, res) => {
 
         //here we have that container acccess
         if (containerInfo.State.Running) {
+            //before stopping copy data to the locacl file of main server for soome uploading purpose for some time
+            const userId = repl.owner.toString();
+            const localPath = path.join(__dirname, `../user_data/${userId}/${replId}`);
+
+            //ensurity for local folder as it is exists or not
+            fs.mkdirSync(localPath, { recursive: true });
+            // Define the container's working directory path
+            const containerWorkdir = `/usr/src/app/workspaces/${userId}`;
+
+
+            // Command to copy the files from the container to the local path
+            const copyCommand = `docker cp "${containerId}:${containerWorkdir}/." "${localPath}"`;
+            await new Promise((resolve, reject) => {
+                require('child_process').exec(copyCommand, (err) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+
+            console.log("Files copied from container to server");
+
+            //after copying upoda that files to s3
+             // Upload the files to S3
+             await uploadFolderToS3(userId, replId, localPath);
+
             //now here we find that container is running and we have to stop them
             await stopDockerContainer(container.id);
             console.log('container stopped successfully');
