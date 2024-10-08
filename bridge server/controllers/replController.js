@@ -1,6 +1,6 @@
 const Repl = require('../models//repl');
 const Docker = require('dockerode');
-const client = require('../config/s3config');
+const s3Client = require('../config/s3config');
 const path = require('path');
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
 const { GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
@@ -19,13 +19,14 @@ const docker = new Docker({
 //controller for downloading data from s3 at first time repel creation
 async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
     try {
+        console.log("arrived in downloading state of file");
         const params = {
             Bucket: bucketName,
-            Key: key,//here key comes as Main.java/main.cpp
+            Key: key,
         }
 
         const command = new GetObjectCommand(params);
-        const data = await client.send(command);
+        const data = await s3Client.send(command);
 
         return new Promise((resolve, reject) => {
             const filestream = fs.createWriteStream(downloadPath);
@@ -35,7 +36,7 @@ async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
         });
     }
     catch (e) {
-        return res.status(404).send(e.message);
+        return { error: e.message };
     }
 }
 
@@ -43,6 +44,7 @@ async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
 //first getting list of avaliable data from particular s3 bucket adn download it individually
 async function listObjectsFromS3(req, res, bucketName, folderKey) {
     try {
+        console.log('listObjectsFromS3');
         const params = {
             Bucket: bucketName,
             Prefix: folderKey
@@ -50,42 +52,55 @@ async function listObjectsFromS3(req, res, bucketName, folderKey) {
 
         //make lister command using aws sdk metthods as we want data in that file
         const command = new ListObjectsV2Command(params);
-        const data = await client.send(command);
-
+        const data = await s3Client.send(command);
+        console.log("S3 List Response:", data); // Add this for debuggin
         //now return data we just got
-        return data.Content.map((item) => item.Key);
+        return data.Contents.map((item) => item.Key);
     }
     catch (e) {
-        return res.status(404).send(e.message);
+        console.log("in catch block", e.message);
+        return { error: e.message };
     }
 }
 
 //we have key folder param such as java nodejs or cpp for that we have to make another controlleer which manage it to me send to particular filee download controller control
 async function downloadFolderFromS3(req, res, bucketName, folderKey, localPath) {
     try {
-        //now we have key of foler as node/cpp/java
-        //list all object in that folder key as it is our code files in my case
-        const objectKeys = await listObjectsFromS3(bucketName, folderKey);
-        //download each objects in local strucuure temprorily
+        console.log("arrived inside download folder");
+
+        // Trim the folderKey to remove any extra spaces
+        const trimmedFolderKey = folderKey.trim();
+
+        const objectKeys = await listObjectsFromS3(req, res, bucketName, trimmedFolderKey);
+
+        // Download each object into the local structure temporarily
         for (const objectKey of objectKeys) {
-            //now we have objectKey like java/Main.java
-            const relativePath = objectKey.replace(folderKey, ' ');
-            //relativePath is Main.java
+            console.log("objectKey", objectKey); // Log the object key
+
+            // Trim the objectKey to remove any extra spaces
+            const trimmedObjectKey = objectKey.trim();
+            const relativePath = trimmedObjectKey.replace(trimmedFolderKey, '').trim(); // Adjust as needed
             const localFilePath = path.join(localPath, relativePath);
 
-            //check weather local folder exists
-            const dir = path.dirname(localFilePath);
-            fs.mkdirSync(dir, { recursive: true });
+            console.log("localpath", localFilePath); // Log the local file path
 
+            // Check whether the local folder exists and create it if it doesn't
+            const dir = path.dirname(localFilePath).trim(); // Trim any spaces
+            console.log("dir", dir); // Log the directory path
+            await fs.promises.mkdir(dir, { recursive: true }); // Use the asynchronous version
+
+            console.log("directory created successfully");
             // Download the file from S3
-            await downloadFileFromS3(bucketName, key, localFilePath);
+            await downloadFileFromS3(req, res, bucketName, trimmedObjectKey, localFilePath);
         }
+        console.log("All files downloaded successfully.");
+        return { success: true };
+    } catch (err) {
+        console.error("Error downloading folder:", err.message); // Log the error
+        return { success: false, message: err.message };
     }
-    catch (err) {
-        res.status(404).send(err.message);
-    }
-
 }
+
 exports.connectToDockerContainer = async (req, res) => {
     try {
         const { replId } = req.params;
@@ -159,8 +174,32 @@ const startDockerContainer = async (req, res, repl) => {
         console.log("spinning isolated environment for user");
         await container.start();
 
+        //define base foldder key name in our case java/nodejs/...
+        const baseFolderKey = `${repl.language}/`;
+        const downloadPath = userWorkspaceDir;
+        console.log("user workspace area", downloadPath);
+        //start downloading process
+        await downloadFolderFromS3(req, res, 'base-templates-by-sahil2005', baseFolderKey, downloadPath);
 
+        //copy that files in actual containers working directory so user can acceess his codebase
+        const containerId = container.id;
+        const targetPath = `/usr/src/app/workspaces/${repl.owner.toString()}`;
+        const command = `docker cp "${downloadPath}/." "${containerId}:${targetPath}"`;
+        await new Promise((resolve, reject) => {
+            require('child_process').exec(command, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
 
+        console.log("Files copied to container");
+        console.log("removing from local environment");
+
+        // Optionally: Remove downloaded files after copying
+        fs.rmdirSync(downloadPath, { recursive: true });
         return container;
     } catch (err) {
         console.error("Error starting Docker container:", err);
