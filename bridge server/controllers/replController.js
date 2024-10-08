@@ -1,16 +1,91 @@
 const Repl = require('../models//repl');
 const Docker = require('dockerode');
+const client = require('../config/s3config');
 const path = require('path');
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
+const { GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
 const mongoose = require('mongoose');
+const fs = require("fs");
 const docker = new Docker({
     host: 'localhost',
+    port: 2375, // Default port for Docker TCP API
     port: 2375, // Default port for Docker TCP API
     // Uncomment the following line if you're using TLS
     // ca: fs.readFileSync('/path/to/cert.pem'), // Use if TLS is enabled
 });
 //build 2 will start from tommorow
 //to connect with previously created docker container
+
+//controller for downloading data from s3 at first time repel creation
+async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
+    try {
+        const params = {
+            Bucket: bucketName,
+            Key: key,//here key comes as Main.java/main.cpp
+        }
+
+        const command = new GetObjectCommand(params);
+        const data = await client.send(command);
+
+        return new Promise((resolve, reject) => {
+            const filestream = fs.createWriteStream(downloadPath);
+            data.Body.pipe(filestream);
+            data.Body.on('error', reject);
+            filestream.on('finish', resolve);
+        });
+    }
+    catch (e) {
+        return res.status(404).send(e.message);
+    }
+}
+
+
+//first getting list of avaliable data from particular s3 bucket adn download it individually
+async function listObjectsFromS3(req, res, bucketName, folderKey) {
+    try {
+        const params = {
+            Bucket: bucketName,
+            Prefix: folderKey
+        }
+
+        //make lister command using aws sdk metthods as we want data in that file
+        const command = new ListObjectsV2Command(params);
+        const data = await client.send(command);
+
+        //now return data we just got
+        return data.Content.map((item) => item.Key);
+    }
+    catch (e) {
+        return res.status(404).send(e.message);
+    }
+}
+
+//we have key folder param such as java nodejs or cpp for that we have to make another controlleer which manage it to me send to particular filee download controller control
+async function downloadFolderFromS3(req, res, bucketName, folderKey, localPath) {
+    try {
+        //now we have key of foler as node/cpp/java
+        //list all object in that folder key as it is our code files in my case
+        const objectKeys = await listObjectsFromS3(bucketName, folderKey);
+        //download each objects in local strucuure temprorily
+        for (const objectKey of objectKeys) {
+            //now we have objectKey like java/Main.java
+            const relativePath = objectKey.replace(folderKey, ' ');
+            //relativePath is Main.java
+            const localFilePath = path.join(localPath, relativePath);
+
+            //check weather local folder exists
+            const dir = path.dirname(localFilePath);
+            fs.mkdirSync(dir, { recursive: true });
+
+            // Download the file from S3
+            await downloadFileFromS3(bucketName, key, localFilePath);
+        }
+    }
+    catch (err) {
+        res.status(404).send(err.message);
+    }
+
+}
 exports.connectToDockerContainer = async (req, res) => {
     try {
         const { replId } = req.params;
@@ -77,12 +152,15 @@ const startDockerContainer = async (req, res, repl) => {
                 PortBindings: {
                     '3000/tcp': [{ HostPort: '3000' }],
                     '5000/tcp': [{ HostPort: '5000' }],
-                    }
+                }
             }
         });
 
         console.log("spinning isolated environment for user");
         await container.start();
+
+
+
         return container;
     } catch (err) {
         console.error("Error starting Docker container:", err);

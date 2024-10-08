@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
-const { createRepl, getReplById, updateRepl, deleteRepl, getRepels, connectToDockerContainer,decideStoppingContainer } = require('../controllers/replController');
+const { createRepl, getReplById, updateRepl, deleteRepl,listObjectsFromS3, getRepels, connectToDockerContainer,decideStoppingContainer } = require('../controllers/replController');
 
 //routes are protected vial middleware
 router.post('/create-repel', authMiddleware, createRepl);
