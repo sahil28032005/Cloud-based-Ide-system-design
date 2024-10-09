@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const s3Client = require('../config/s3config');
 const path = require('path');
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
-const { GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
+const { GetObjectCommand, ListObjectsV2Command,PutObjectCommand } = require("@aws-sdk/client-s3");
 const mongoose = require('mongoose');
 const fs = require("fs");
 const docker = new Docker({
@@ -254,18 +254,19 @@ exports.decideStoppingContainer = async (req, res) => {
             console.log("Files copied from container to server");
 
             //after copying upoda that files to s3
-             // Upload the files to S3
-             await uploadFolderToS3(userId, replId, localPath);
+            // Upload the files to S3
+            console.log("at time to be sent", localPath);
+            await uploadFolderToS3(req, res, userId, replId, localPath);
 
             //now here we find that container is running and we have to stop them
             await stopDockerContainer(container.id);
             console.log('container stopped successfully');
             return res.status(200).send({ success: true, message: 'Container stopped successfully' });
         }
-        return res.satus(301).send('api problem for stopping contaainer');
+        // return res.satus(301).send('api problem for stopping contaainer');
     }
     catch (err) {
-        res.status(500).send(err.message);
+        return res.status(500).send(err.message);
     }
 }
 
@@ -347,5 +348,47 @@ exports.getRepels = async (req, res) => {
     }
     catch (err) {
         res.status(500).json({ message: err.message });
+    }
+}
+
+async function uploadFolderToS3(req, res, userId, replId, localPath) {
+    try {
+        // console.log("arrived locallpath", localPath);
+        //reading all the files recursivvely
+        const uploadFiles = async (dir) => {
+            const files = fs.readdirSync(dir);
+            console.log("arrived locallpath", dir);
+            for (const file of files) {
+                const filePath = path.join(dir, file);
+                const stat = fs.statSync(filePath);
+
+                if (stat.isDirectory()) {
+                    // Recursively upload subdirectories
+                    await uploadFiles(filePath);
+                }
+                else {
+                    // Prepare the S3 key based on userId and replId
+                    const s3Key = `${userId}/${replId}/${path.relative(localPath, filePath)}`;
+
+                    //read the file contents
+                    const fileContent = fs.readFileSync(filePath);
+
+                    //upload to s3
+                    await s3Client.send(new PutObjectCommand({
+                        Bucket: 'userrepels',
+                        Key: s3Key,
+                        Body: fileContent,
+                        ContentType: 'text/plain'
+                    }));
+                    console.log(`Uploaded ${s3Key} to S3`);
+                }
+            }
+        }
+        //start the upload process
+        await uploadFiles(localPath);
+    }
+    catch (e) {
+        console.error(e); // Log the error for debugging
+        throw new Error('Failed to upload folder to S3'); // Rethrow the error
     }
 }
