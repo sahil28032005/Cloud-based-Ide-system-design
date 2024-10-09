@@ -104,13 +104,14 @@ async function downloadFolderFromS3(req, res, bucketName, folderKey, localPath) 
 exports.connectToDockerContainer = async (req, res) => {
     try {
         const { replId, userId } = req.params;
-
+        
         //find the repel is present for ensurity
         const repl = await Repl.findById(replId);
         if (!repl) {
             return res.status(404).send({ message: 'Repel not found' });
 
         }
+        const userWorkspaceDir = path.join(USER_DATA_DIR, repl.owner.toString());
         //spin the new docker container
         const container = await docker.createContainer({
             Image: `user_isolation_${repl.language}`,
@@ -149,6 +150,26 @@ exports.connectToDockerContainer = async (req, res) => {
         console.log("started to download files from s3 at time of reconnection");
         await downloadFolderFromS3(req, res, "userrepels", `${userId}/${replId}`, localPath);
         console.log("done downloading files!");
+        const downloadPath = localPath;
+        const targetPath = `/usr/src/app/workspaces/${repl.owner.toString()}`;
+        const command = `docker cp "${downloadPath}/." "${containerId}:${targetPath}"`;
+        await new Promise((resolve, reject) => {
+            require('child_process').exec(command, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+
+        console.log("Files copied to container");
+        console.log("removing from local environment");
+
+        // Optionally: Remove downloaded files after copying
+        fs.rmdirSync(downloadPath, { recursive: true });
+        return res.status(201).send({success: true});
+
     }
     catch (err) {
         res.status(500).send(err.message);
@@ -285,7 +306,7 @@ exports.decideStoppingContainer = async (req, res) => {
         if (containerInfo.State.Running) {
             //before stopping copy data to the locacl file of main server for soome uploading purpose for some time
             const userId = repl.owner.toString();
-            const localPath = path.join(__dirname, `../user_data/${userId}/${replId}`);
+            const localPath = path.join(__dirname , `../user_data/${userId}/${replId}`);
 
             //ensurity for local folder as it is exists or not
             fs.mkdirSync(localPath, { recursive: true });

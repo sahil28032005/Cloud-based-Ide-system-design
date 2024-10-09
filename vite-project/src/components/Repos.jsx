@@ -56,9 +56,9 @@ const Repos = () => {
         fetchRepos();
     }, [userId]);
 
-    const handleRepoClick = async (replId) => {
+    const handleRepoClick = async (replId, userId) => {
         try {
-            const response = await axios.post(`http://localhost:5002/api/repls/connect-container/${replId}`);
+            const response = await axios.post(`http://localhost:5002/api/repls/connect-container/${replId}/${userId}`);
             if (response.data.success) {
                 navigate(`/?userId=${userId}&replId=${replId}`);
             } else {
@@ -132,7 +132,7 @@ const Repos = () => {
                                 <Tooltip key={repo._id} content="Click to open repository" placement="top">
                                     <Card
                                         className="bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1 cursor-pointer"
-                                        onClick={() => handleRepoClick(repo._id)}
+                                        onClick={() => handleRepoClick(repo._id, userId)}
                                     >
                                         <h3 className="text-xl font-semibold mb-2 text-purple-300 transition duration-300 transform hover:scale-105">{repo.name}</h3>
                                         <p className="text-gray-400">{repo.status || 'No status provided'}</p>

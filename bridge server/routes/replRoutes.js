@@ -9,7 +9,7 @@ router.post('/get-repel', authMiddleware, getReplById);
 router.post('/update-repel', authMiddleware, updateRepl);
 router.post('/delete-repel', authMiddleware, deleteRepl);
 router.get('/:userId/repos', getRepels);
-router.post('/connect-container/:replId', connectToDockerContainer);
+router.post('/connect-container/:replId/:userId', connectToDockerContainer);
 router.post('/stop-by-repel',decideStoppingContainer);
 
 module.exports = router;
