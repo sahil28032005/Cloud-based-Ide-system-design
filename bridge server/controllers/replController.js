@@ -3,7 +3,7 @@ const Docker = require('dockerode');
 const s3Client = require('../config/s3config');
 const path = require('path');
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
-const { GetObjectCommand, ListObjectsV2Command,PutObjectCommand } = require("@aws-sdk/client-s3");
+const { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } = require("@aws-sdk/client-s3");
 const mongoose = require('mongoose');
 const fs = require("fs");
 const docker = new Docker({
@@ -103,44 +103,98 @@ async function downloadFolderFromS3(req, res, bucketName, folderKey, localPath) 
 
 exports.connectToDockerContainer = async (req, res) => {
     try {
-        const { replId } = req.params;
-        console.log("arrived replId: ", replId);
-        //find that repel
+        const { replId, userId } = req.params;
+
+        //find the repel is present for ensurity
         const repl = await Repl.findById(replId);
         if (!repl) {
-            return res.status(404).json({ message: 'Repl not found' });
+            return res.status(404).send({ message: 'Repel not found' });
+
         }
-        const containerId = repl.containerId;  // Retrieve the containerId
-        if (!containerId) {
-            return res.status(404).json({ message: 'Container not found for this Repl' });
-        }
-
-        //get the docker container instance
-        const container = docker.getContainer(containerId);
-
-        //check container state weather running or not
-        const containerInfo = await container.inspect();
-
-        if (containerInfo.State.Running) {
-            console.log(`Container ${containerId} is already running`);
-        } else {
-            // Start the container if it's not running
-            await container.start();
-            console.log(`Started container ${containerId}`);
-        }
-
-        // Send the container connection details back to the frontend
-        res.status(200).json({
-            success: true,
-            message: 'Connected to the container',
-            containerId: containerId,
-            // Include any other relevant details you might need
+        //spin the new docker container
+        const container = await docker.createContainer({
+            Image: `user_isolation_${repl.language}`,
+            name: `repl-${repl._id}`,
+            Tty: true, // Terminal interaction enabled
+            // Env: [
+            //     `LANG=${repl.language}`, // Pass the language as an environment variable
+            //     ...repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : []
+            // ],
+            Labels: { replId: repl._id.toString() },
+            HostConfig: {
+                // Binds: [
+                //     // Bind mount the user's workspace directory into the container
+                //     `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`
+                // ],
+                PortBindings: {
+                    '3000/tcp': [{ HostPort: '3000' }],
+                    '5000/tcp': [{ HostPort: '5000' }],
+                }
+            }
         });
+        console.log("spinning isolated environment for user");
+        await container.start();
+
+        // Update the Repl record with the new containerId
+        const containerId = container.id;
+        repl.containerId = containerId;
+        await repl.save();
+
+        ///at this time we have our container is started and in running state
+        // now we have to copy files inside it from s3
+        //idea is to pull it locally first and then copy in contaner and remove from local and same for stopping containner
+
+        //prepare local path to download file on main server
+        const localPath = path.join(__dirname, `../user_data/${userId}/${replId}`);
+        console.log("started to download files from s3 at time of reconnection");
+        await downloadFolderFromS3(req, res, "userrepels", `${userId}/${replId}`, localPath);
+        console.log("done downloading files!");
     }
     catch (err) {
         res.status(500).send(err.message);
     }
 }
+
+// exports.connectToDockerContainer = async (req, res) => {
+//     try {
+//         const { replId } = req.params;
+//         console.log("arrived replId: ", replId);
+//         //find that repel
+//         const repl = await Repl.findById(replId);
+//         if (!repl) {
+//             return res.status(404).json({ message: 'Repl not found' });
+//         }
+//         const containerId = repl.containerId;  // Retrieve the containerId
+//         if (!containerId) {
+//             return res.status(404).json({ message: 'Container not found for this Repl' });
+//         }
+
+//         //get the docker container instance
+//         const container = docker.getContainer(containerId);
+
+//         //check container state weather running or not
+//         const containerInfo = await container.inspect();
+
+//         if (containerInfo.State.Running) {
+//             console.log(`Container ${containerId} is already running`);
+//         } else {
+//             // Start the container if it's not running
+//             await container.start();
+//             console.log(`Started container ${containerId}`);
+//         }
+
+//         // Send the container connection details back to the frontend
+//         res.status(200).json({
+//             success: true,
+//             message: 'Connected to the container',
+//             containerId: containerId,
+//             // Include any other relevant details you might need
+//         });
+//     }
+//     catch (err) {
+//         res.status(500).send(err.message);
+//     }
+// }
 
 //function for spinning docker containers
 const startDockerContainer = async (req, res, repl) => {
@@ -261,7 +315,16 @@ exports.decideStoppingContainer = async (req, res) => {
             //now here we find that container is running and we have to stop them
             await stopDockerContainer(container.id);
             console.log('container stopped successfully');
-            return res.status(200).send({ success: true, message: 'Container stopped successfully' });
+
+            // Remove the container permanently
+            await container.remove();
+            console.log('Container removed successfully');
+
+            //remove server files as they will crate load on server if unnecessary traffic will come
+            fs.rmSync(localPath, { recursive: true, force: true });  // Use fs.rmdirSync(localPath, { recursive: true }) if using an older Node.js version
+            console.log(`Local path ${localPath} and its contents have been deleted`);
+
+            return res.status(200).send({ success: true, message: 'Container stopped and local files removed successfully' });
         }
         // return res.satus(301).send('api problem for stopping contaainer');
     }
@@ -381,6 +444,7 @@ async function uploadFolderToS3(req, res, userId, replId, localPath) {
                         ContentType: 'text/plain'
                     }));
                     console.log(`Uploaded ${s3Key} to S3`);
+
                 }
             }
         }
