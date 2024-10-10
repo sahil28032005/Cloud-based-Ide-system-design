@@ -311,7 +311,9 @@ app.get('/files', (req, res) => {
 //route that acceots file writer requests to specified path
 app.post('/write-file', extractUserId, (req, res) => {
     try {
-        const { filePath, content } = req.body;
+        let { filePath, content } = req.body;
+        console.log("writer path: " + filePath);
+        filePath = filePath.trim();
         const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
         console.log("writer path: ", fullPath);
         console.log("made final write path as", fullPath);
@@ -320,6 +322,7 @@ app.post('/write-file', extractUserId, (req, res) => {
             if (error) {
                 return res.status(500).json({ error: 'failed to write file' + error.message });
             }
+            console.log("written");
             return res.status(200).json({ message: 'File written successfully' });
         });
 
