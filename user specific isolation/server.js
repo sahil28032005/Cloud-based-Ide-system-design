@@ -215,11 +215,22 @@ function setupUserConnection(socket, userId, userWorkspaceDir) {
         console.log(data);
         io.emit('terminal:data', data);
     });
+
+    //restrictor function for users who try entering unnecessary commsnds or folder tatrversals
+    const isRestrictedCommand = (command) => {
+        const forbiddenPatterns = [/cd\s+\.\./, /\s*\.\.\s*/, /cd\s+\/.*/, /cd\s+~/];
+        return forbiddenPatterns.some(pattern => pattern.test(command));
+    };
     //takes command for execution and write in it actuall terminal of docker containers terminal insted of using ssh
 
     socket.on('chat_message', (msg) => {
         console.log('Message received:', msg);
-        ptyProcess.write(`${msg}\r`);
+        // Check if the user is trying to escape the workspace
+        if (isRestrictedCommand(msg)) {
+            socket.emit('terminal:data', 'Access Denied: Cannot navigate outside the workspace.\r');
+        } else {
+            ptyProcess.write(`${msg}\r`);
+        }
     });
 
     // Handle code execution requests
