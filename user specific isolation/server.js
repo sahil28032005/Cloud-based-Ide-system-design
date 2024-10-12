@@ -5,6 +5,7 @@ const pty = require('node-pty');
 const shell = process.platform === 'win32' ? 'powershell.exe' : 'bash';
 const cors = require('cors');
 const path = require('path');
+const axios = require('axios');
 const fs = require('fs');
 const app = express();
 const chokidar = require('chokidar');
@@ -381,10 +382,25 @@ function emitFileStructure(userWorkspaceDir) {
 }
 
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'healthy', 
+        message: 'Server is healthy', 
+        port: PORT 
+    });
+});
 
 
-server.listen(PORT, () => {
+server.listen(PORT, async() => {
     console.log(`server listening on port ${PORT}`);
+
+    try {
+        const response = await axios.get(`http://localhost:${PORT}/health`);
+        console.log('JSON response from /health:', response.data);
+    } catch (error) {
+        console.error('Error fetching JSON response from /health:', error);
+    }
+    
     // const socket = ioClient(`http://localhost:${PORT}`);//testing web socket connection for learning purpose
     // socket.on('connect', () => {
     //     console.log('Client connected to server');
