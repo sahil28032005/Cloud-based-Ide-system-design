@@ -1,4 +1,6 @@
 const Repl = require('../models//repl');
+// const AWS = require('aws-sdk'); ///remeber to unistall this
+const { ECSClient, RunTaskCommand } = require("@aws-sdk/client-ecs");
 const Docker = require('dockerode');
 const s3Client = require('../config/s3config');
 const path = require('path');
@@ -17,6 +19,12 @@ const docker = new Docker({
 //to connect with previously created docker container
 
 //controller for downloading data from s3 at first time repel creation
+
+// Initialize the ECS service object
+const ecs = new ECSClient({
+    region: 'ap-south-1', // Replace with your AWS region
+});
+
 async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
     try {
         console.log("arrived in downloading state of file");
@@ -104,7 +112,7 @@ async function downloadFolderFromS3(req, res, bucketName, folderKey, localPath) 
 exports.connectToDockerContainer = async (req, res) => {
     try {
         const { replId, userId } = req.params;
-        
+
         //find the repel is present for ensurity
         const repl = await Repl.findById(replId);
         if (!repl) {
@@ -168,7 +176,7 @@ exports.connectToDockerContainer = async (req, res) => {
 
         // Optionally: Remove downloaded files after copying
         fs.rmdirSync(downloadPath, { recursive: true });
-        return res.status(201).send({success: true});
+        return res.status(201).send({ success: true });
 
     }
     catch (err) {
@@ -216,6 +224,58 @@ exports.connectToDockerContainer = async (req, res) => {
 //         res.status(500).send(err.message);
 //     }
 // }
+const startDockerContainerEcs = async (repl) => {
+    console.log("ecs docker starter");
+    try {
+        const params = {
+            cluster: 'cloud-manager-cluster', // Your ECS cluster name
+            taskDefinition: 'sahil-sadekar-java-server:7', // The task definition name
+            launchType: 'FARGATE', // Choose 'FARGATE' or 'EC2'
+            networkConfiguration: {
+                awsvpcConfiguration: {
+                    subnets: ['subnet-0e0c97b6f83bfc538', 'subnet-08a60214836f38b79', 'subnet-0c4be927b2f4c3790'], // Your VPC subnet ID
+                    securityGroups: ['sg-0bf9e7e682e1bed1a'], // Your security group ID
+                    assignPublicIp: 'ENABLED', // Or 'DISABLED' depending on your requirements
+                },
+            },
+            overrides: {
+                containerOverrides: [
+                    {
+                        name: 'java-container', // Replace with your container name from the task definition
+                        command: [
+                            'sh', '-c', // Runs a shell command inside the container
+                            `aws s3 cp s3://base-templates-by-sahil2005/${repl.language} /usr/src/app/workspaces/${repl.owner.toString()} --recursive`
+                            // Copies files from S3 to the /app folder inside the container and starts your app
+                        ],
+                    },
+                ],
+            },
+            count: 1, // Number of tasks to run
+        };
+
+        //above lines will responsible for service configuration and task defination selected to run
+        const data = await ecs.send(new RunTaskCommand(params));
+        //retrive arn of that task
+        console.log("Task started successfully:", data);
+
+        // Extract task ARN from the response
+        if (data.tasks && data.tasks.length > 0) {
+            const taskArn = data.tasks[0].taskArn;
+            console.log("Task ARN:", taskArn);
+            return taskArn;
+        } else {
+            console.log("No tasks started");
+        }
+
+        //till this we have started docker container using task defination in s3
+
+        //further copy our base templates from s3 to container as per his language
+
+    }
+    catch (err) {
+        console.log(err.message);
+    }
+}
 
 //function for spinning docker containers
 const startDockerContainer = async (req, res, repl) => {
@@ -306,7 +366,7 @@ exports.decideStoppingContainer = async (req, res) => {
         if (containerInfo.State.Running) {
             //before stopping copy data to the locacl file of main server for soome uploading purpose for some time
             const userId = repl.owner.toString();
-            const localPath = path.join(__dirname , `../user_data/${userId}/${replId}`);
+            const localPath = path.join(__dirname, `../user_data/${userId}/${replId}`);
 
             //ensurity for local folder as it is exists or not
             fs.mkdirSync(localPath, { recursive: true });
@@ -376,14 +436,16 @@ exports.createRepl = async (req, res) => {
             name, language, containerId
         });
         await newRepl.save();
-        //here template creation is done using validation of berer token
-        const container = await startDockerContainer(req, res, newRepl);
+        // here template creation is done using validation of berer token
+        // const container = await startDockerContainer(req, res, newRepl);
+        const container = await startDockerContainerEcs(newRepl);
         // Update the Repl with the container ID and save it
         newRepl.containerId = container.id;
         await newRepl.save();
         console.log("repel was saved");
         // Respond with the created Repl data
         return res.status(200).json({ success: true, repl: newRepl });
+        // return res.status(200).json({ success: true });
     }
     catch (err) {
         return res.status(401).send({ message: err.message });
