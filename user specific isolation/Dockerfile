@@ -8,7 +8,15 @@ RUN apt-get update && \
     apt-get install -y \
     build-essential \
     openjdk-17-jdk \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install AWS CLI
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip
+
 
 # Copy package.json and package-lock.json (if available)
 COPY package*.json ./

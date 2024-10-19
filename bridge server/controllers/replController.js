@@ -1,6 +1,7 @@
 const Repl = require('../models//repl');
 // const AWS = require('aws-sdk'); ///remeber to unistall this
 const { ECSClient, RunTaskCommand } = require("@aws-sdk/client-ecs");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Docker = require('dockerode');
 const s3Client = require('../config/s3config');
 const path = require('path');
@@ -25,6 +26,24 @@ const docker = new Docker({
 const ecs = new ECSClient({
     region: 'ap-south-1', // Replace with your AWS region
 });
+
+//awss function for grnerate presigned url for cintainer tasks
+async function getPreSignedUrl(bucketName, prefix) {
+    try {
+        console.log("arrived bucket name: " + bucketName);
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Prefix: prefix
+        });
+
+        //generate presigned url for 5 minutes of valid access
+        const url = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+        return url;
+    }
+    catch (err) {
+        console.log(err.message);
+    }
+}
 
 async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
     try {
@@ -228,9 +247,13 @@ exports.connectToDockerContainer = async (req, res) => {
 const startDockerContainerEcs = async (repl) => {
     console.log("ecs docker starter");
     try {
+
+        //we have come for repel cretion mesna we need access to s3 generate presigned uri
+        const uri = await getPreSignedUrl('base-templates-by-sahil2005', `${repl.language}/`);
+        console.log('Pre-signed URL:', uri);
         const params = {
             cluster: 'cloud-manager-cluster', // Your ECS cluster name
-            taskDefinition: 'sahil-sadekar-java-server:7', // The task definition name
+            taskDefinition: 'sahil-sadekar-java-server:8', // The task definition name
             launchType: 'FARGATE', // Choose 'FARGATE' or 'EC2'
             networkConfiguration: {
                 awsvpcConfiguration: {
@@ -255,18 +278,18 @@ const startDockerContainerEcs = async (repl) => {
         };
 
         //above lines will responsible for service configuration and task defination selected to run
-        const data = await ecs.send(new RunTaskCommand(params));
+        // const data = await ecs.send(new RunTaskCommand(params));
         //retrive arn of that task
-        console.log("Task started successfully:", data);
+        // console.log("Task started successfully:", data);
 
         // Extract task ARN from the response
-        if (data.tasks && data.tasks.length > 0) {
-            const taskArn = data.tasks[0].taskArn;
-            console.log("Task ARN:", taskArn);
-            return taskArn;
-        } else {
-            console.log("No tasks started");
-        }
+        // if (data.tasks && data.tasks.length > 0) {
+        //     const taskArn = data.tasks[0].taskArn;
+        //     console.log("Task ARN:", taskArn);
+        //     return taskArn;
+        // } else {
+        //     console.log("No tasks started");
+        // }
 
         //till this we have started docker container using task defination in s3
 
