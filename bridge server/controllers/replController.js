@@ -1,6 +1,6 @@
 const Repl = require('../models//repl');
 // const AWS = require('aws-sdk'); ///remeber to unistall this
-const { ECSClient, RunTaskCommand } = require("@aws-sdk/client-ecs");
+const { ECSClient, RunTaskCommand ,ExecuteCommandCommand } = require("@aws-sdk/client-ecs");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Docker = require('dockerode');
 const s3Client = require('../config/s3config');
@@ -28,26 +28,42 @@ const ecs = new ECSClient({
 });
 
 //awss function for grnerate presigned url for cintainer tasks
-async function getPreSignedUrl(bucketName, prefix) {
-    try {
-        console.log("arrived bucket name: " + bucketName);
+//generate presigne url for each file
+async function getPreSignedUrl(bucketName, keys) {
+
+    //array to storer all data uri
+    console.log("key", keys, "bucketName", bucketName);
+    const uri = [];
+    console.log("arrived bucket name: " + bucketName);
+    for (key of keys) {
         const command = new GetObjectCommand({
             Bucket: bucketName,
-            Prefix: prefix
+            Key: key
         });
 
-        //generate presigned url for 5 minutes of valid access
-        const url = await getSignedUrl(s3Client, command, { expiresIn: 300 });
-        return url;
+        //get url for the current key
+        try {
+            const url = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+            console.log("url by inb cmd: " + url);
+            uri.push(url);
+        }
+        catch (err) {
+            console.error("error getting data from s3: " + err.message);
+        }
+
     }
-    catch (err) {
-        console.log(err.message);
-    }
+
+
+    //generate presigned url for 5 minutes of valid access
+
+    return uri;
+
+
 }
 
 async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
     try {
-        console.log("arrived in downloading state of file");
+        console.log("arrived in downloading state of file named", key);
         const params = {
             Bucket: bucketName,
             Key: key,
@@ -71,6 +87,7 @@ async function downloadFileFromS3(req, res, bucketName, key, downloadPath) {
 
 //first getting list of avaliable data from particular s3 bucket adn download it individually
 async function listObjectsFromS3(req, res, bucketName, folderKey) {
+    console.log("arrived bucket ", bucketName, "folderkit", folderKey);
     try {
         console.log('listObjectsFromS3');
         const params = {
@@ -94,12 +111,15 @@ async function listObjectsFromS3(req, res, bucketName, folderKey) {
 //we have key folder param such as java nodejs or cpp for that we have to make another controlleer which manage it to me send to particular filee download controller control
 async function downloadFolderFromS3(req, res, bucketName, folderKey, localPath) {
     try {
+        //java/ 
         console.log("arrived inside download folder");
 
         // Trim the folderKey to remove any extra spaces
         const trimmedFolderKey = folderKey.trim();
 
         const objectKeys = await listObjectsFromS3(req, res, bucketName, trimmedFolderKey);
+        console.log("after listing", objectKeys);
+
 
         // Download each object into the local structure temporarily
         for (const objectKey of objectKeys) {
@@ -113,10 +133,19 @@ async function downloadFolderFromS3(req, res, bucketName, folderKey, localPath) 
             console.log("localpath", localFilePath); // Log the local file path
 
             // Check whether the local folder exists and create it if it doesn't
-            const dir = path.dirname(localFilePath).trim(); // Trim any spaces
-            console.log("dir", dir); // Log the directory path
-            await fs.promises.mkdir(dir, { recursive: true }); // Use the asynchronous version
-
+            const dirPath = path.dirname(localFilePath).trim(); // Trim any spaces
+            if (!fs.existsSync(dirPath)) {
+                fs.mkdirSync(dirPath, { recursive: true });
+                console.log(`Directory created successfully: ${dirPath}`);
+            } else {
+                console.log(`Directory already exists: ${dirPath}`);
+            }
+            // console.log("dir", dir); // Log the directory path
+            // await fs.promises.mkdir(dir, { recursive: true }); // Use the asynchronous version
+            // Skip downloading if the key represents a folder (folderKey ends with '/')
+            if (objectKey.endsWith('/')) {
+                continue;
+            }
             console.log("directory created successfully");
             // Download the file from S3
             await downloadFileFromS3(req, res, bucketName, trimmedObjectKey, localFilePath);
@@ -249,8 +278,10 @@ const startDockerContainerEcs = async (repl) => {
     try {
 
         //we have come for repel cretion mesna we need access to s3 generate presigned uri
-        const uri = await getPreSignedUrl('base-templates-by-sahil2005', `${repl.language}/`);
-        console.log('Pre-signed URL:', uri);
+        const uri = await listObjectsFromS3('base-templates-by-sahil2005', `${repl.language}/`);
+        console.log("after listing", uri);
+        const accessUris = await getPreSignedUrl('base-templates-by-sahil2005', uri);
+        console.log('Pre-signed URL:', accessUris);
         const params = {
             cluster: 'cloud-manager-cluster', // Your ECS cluster name
             taskDefinition: 'sahil-sadekar-java-server:8', // The task definition name
@@ -307,59 +338,112 @@ const startDockerContainer = async (req, res, repl) => {
     try {
         // Construct path to the user's workspace directory
         const userWorkspaceDir = path.join(USER_DATA_DIR, repl.owner.toString());
-
+        //local side configs
         // Here we have repl access of newly created repl by user
-        const container = await docker.createContainer({
-            Image: `user_isolation_${repl.language}`,
-            name: `repl-${repl._id}`,
-            Tty: true, // Terminal interaction enabled
-            // Env: [
-            //     `LANG=${repl.language}`, // Pass the language as an environment variable
-            //     ...repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : []
-            // ],
-            Labels: { replId: repl._id.toString() },
-            HostConfig: {
-                // Binds: [
-                //     // Bind mount the user's workspace directory into the container
-                //     `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`
-                // ],
-                PortBindings: {
-                    '3000/tcp': [{ HostPort: '3000' }],
-                    '5000/tcp': [{ HostPort: '5000' }],
-                }
-            }
-        });
+        // const container = await docker.createContainer({
+        //     Image: `user_isolation_${repl.language}`,
+        //     name: `repl-${repl._id}`,
+        //     Tty: true, // Terminal interaction enabled
+        //     // Env: [
+        //     //     `LANG=${repl.language}`, // Pass the language as an environment variable
+        //     //     ...repl.environment ? Object.entries(repl.environment).map(([key, value]) => `${key}=${value}`) : []
+        //     // ],
+        //     Labels: { replId: repl._id.toString() },
+        //     HostConfig: {
+        //         // Binds: [
+        //         //     // Bind mount the user's workspace directory into the container
+        //         //     `${userWorkspaceDir}:/usr/src/app/workspaces/${repl.owner.toString()}`
+        //         // ],
+        //         PortBindings: {
+        //             '3000/tcp': [{ HostPort: '3000' }],
+        //             '5000/tcp': [{ HostPort: '5000' }],
+        //         }
+        //     }
+        // });
 
-        console.log("spinning isolated environment for user");
-        await container.start();
+        // console.log("spinning isolated environment for user");
+        // await container.start();
 
         //define base foldder key name in our case java/nodejs/...
-        const baseFolderKey = `${repl.language}/`;
-        const downloadPath = userWorkspaceDir;
-        console.log("user workspace area", downloadPath);
-        //start downloading process
-        await downloadFolderFromS3(req, res, 'base-templates-by-sahil2005', baseFolderKey, downloadPath);
 
+        //server side config after amazon aws integrations
+        const params = {
+            cluster: 'cloud-manager-cluster', // Your ECS cluster name
+            taskDefinition: 'sahil-sadekar-java-server:9', // The task definition name
+            launchType: 'FARGATE', // Choose 'FARGATE' or 'EC2'
+            networkConfiguration: {
+                awsvpcConfiguration: {
+                    subnets: ['subnet-0e0c97b6f83bfc538', 'subnet-08a60214836f38b79', 'subnet-0c4be927b2f4c3790'], // Your VPC subnet ID
+                    securityGroups: ['sg-0bf9e7e682e1bed1a'], // Your security group ID
+                    assignPublicIp: 'ENABLED', // Or 'DISABLED' depending on your requirements
+                },
+            },
+            overrides: {
+                containerOverrides: [
+                    {
+                        name: 'java-container', // Replace with your container name from the task definition
+                        command: [],
+                        
+                    },
+                ],
+            },
+            count: 1, // Number of tasks to run
+        };
+
+        //start the container
+        const data = await ecs.send(new RunTaskCommand(params));
+        //above line wil start container
+
+        //stoer task arn for future user such as data copying and retrival and many more ....
+        const taskArn = data.tasks[0].taskArn;
+        console.log("comtainer started....");
+
+
+        // const baseFolderKey = `${repl.language}/`;
+        // const downloadPath = userWorkspaceDir;
+        // console.log("user workspace area", downloadPath);
+        // //start downloading process
+        // await downloadFolderFromS3(req, res, 'base-templates-by-sahil2005', baseFolderKey, downloadPath);
+        // console.log("downloaded files from server side s3");
+
+        // //now copy downnloaded data to the  container for use
+        // const targetPath = `/usr/src/app/workspaces/${repl.owner.toString()}`;
+        // const containerName = 'java-container';
+        // const copyCommand = `sh -c "cp -r ${downloadPath}* ${targetPath}"`; 
+
+        // //params fo copying
+        // const execParams = {
+        //     cluster: 'cloud-manager-cluster',
+        //     task: taskArn.split('/')[1], // Extract task ID from the ARN
+        //     container: containerName,
+        //     command: copyCommand,
+        // };
+        // const execResult = await ecs.send(new ExecuteCommandCommand(execParams));
+        // if (execResult && execResult.payload) {
+        //     console.log('Files copied to the container:', execResult);
+        // } else {
+        //     console.error('Failed to copy files to the container. No execution result returned.');
+        // }
         //copy that files in actual containers working directory so user can acceess his codebase
-        const containerId = container.id;
-        const targetPath = `/usr/src/app/workspaces/${repl.owner.toString()}`;
-        const command = `docker cp "${downloadPath}/." "${containerId}:${targetPath}"`;
-        await new Promise((resolve, reject) => {
-            require('child_process').exec(command, (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        // const containerId = container.id;
+        // const targetPath = `/usr/src/app/workspaces/${repl.owner.toString()}`;
+        // const command = `docker cp "${downloadPath}/." "${containerId}:${targetPath}"`;
+        // await new Promise((resolve, reject) => {
+        //     require('child_process').exec(command, (err) => {
+        //         if (err) {
+        //             reject(err);
+        //         } else {
+        //             resolve();
+        //         }
+        //     });
+        // });
 
-        console.log("Files copied to container");
-        console.log("removing from local environment");
+        // console.log("Files copied to container");
+        // console.log("removing from local environment");
 
-        // Optionally: Remove downloaded files after copying
-        fs.rmdirSync(downloadPath, { recursive: true });
-        return container;
+        // // Optionally: Remove downloaded files after copying
+        // fs.rmdirSync(downloadPath, { recursive: true });
+        // return container;
     } catch (err) {
         console.error("Error starting Docker container:", err);
         throw new Error(err.message);
@@ -461,10 +545,10 @@ exports.createRepl = async (req, res) => {
         });
         await newRepl.save();
         // here template creation is done using validation of berer token
-        // const container = await startDockerContainer(req, res, newRepl);
-        const container = await startDockerContainerEcs(newRepl);
+        const container = await startDockerContainer(req, res, newRepl);
+        // const container = await startDockerContainerEcs(newRepl);
         // Update the Repl with the container ID and save it
-        newRepl.containerId = container.id;
+        // newRepl.containerId = container.id;
         await newRepl.save();
         console.log("repel was saved");
         // Respond with the created Repl data
