@@ -1,18 +1,12 @@
 #!/bin/bash
 
-# Check the LANG environment variable and install the language
-if [ "$LANG" = "python" ]; then
-    echo "Installing Python..."
-    apt-get update && apt-get install -y python3 python3-pip
-elif [ "$LANG" = "java" ]; then
-    echo "Installing Java..."
-    apt-get update && apt-get install -y default-jdk
-elif [ "$LANG" = "nodejs" ]; then
-    echo "Node.js is already installed"
-else
-    echo "No valid language specified. Exiting..."
-    exit 1
-fi
+# Set the S3 bucket and path
+S3_BUCKET="base-templates-by-sahil2005"
+S3_PATH="java/"
 
-# Execute the CMD specified in the Dockerfile
-exec "$@"
+# Pull the code from S3 to the specific workspace directory using repl.owner from the environment
+echo "Pulling code from S3..."
+aws s3 cp s3://$S3_BUCKET/$S3_PATH /usr/src/app/workspaces/user123 --recursive --no-sign-request
+
+# Start the Node.js application
+exec node server.js
