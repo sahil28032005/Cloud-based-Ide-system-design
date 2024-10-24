@@ -41,6 +41,7 @@ app.use(express.json());
 
 const ioClient = require('socket.io-client');
 const { stdout } = require('process');
+const { generatePresignnedUrls } = require('./config/s3');
 
 //make custom port to run node/web server
 const PORT = process.env.PORT || 5000;
@@ -279,11 +280,80 @@ function setupUserConnection(socket, userId, userWorkspaceDir) {
         emitFileStructure(userWorkspaceDir);
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         console.log("User disconnected");
+
+        //here try ti write s3 push logic start uploading
+        await uploadDirectoryToS3(userWorkspace, userId);
+
     });
 }
+//for uploading directory to s3 bucket
+async function uploadDirectoryToS3(directory, userId) {
+    try {
+        //gett all file frim workspace
+        const files = fs.readdirSync(directory);
 
+        //now we have directory sync
+        console.log(`files in workspace dir are ${files}`);
+
+        //iterate over files
+
+        for (const file of files) {
+            const filePath = path.join(userWorkspaceDir, file);
+
+            //check weather it is file ot directory
+
+            if (fs.statSync(filePath).isDirectory()) {
+                //thi is dir call recursively
+                await uploadDirectoryToS3(filePath, userId);
+            }
+            else {
+                const fileType = mime.getType(filePath);
+                //generate key according to s3 format returns Main.java as key
+                const key = path.relative(directory, filePath).replace(/\\/g, '/');
+                //now generate presigned url
+                const url = await generatePresignnedUrls(process.env.S3_BUCKET_NAME, `${userId}/${key}`,fileType);
+                //read the file content
+                const fileData = fs.readFileSync(filePath);
+
+                //upload using presigned url
+                await uploadFileToS3(url, fileData);
+
+                console.log(`file ${file} successfully uploaded to s3`);
+            }
+
+        }
+
+        console.log("all files uploaded");
+
+    }
+    catch (err) {
+        console.error('error for file upload...', err);
+    }
+}
+
+
+//function to upload file using fetch or axios
+
+async function uploadFileToS3(url, fileData) {
+    try {
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/octet-stream'
+            },
+            body: fileData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+        }
+    }
+    catch (err) {
+        console.error('error for file upload...', err);
+    }
+}
 //try to make initial get request which gets files in users own space
 function getAllFiles(dirPath, baseDir) {
     const files = fs.readdirSync(dirPath);
@@ -383,15 +453,15 @@ function emitFileStructure(userWorkspaceDir) {
 
 
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'healthy', 
-        message: 'Server is healthy', 
-        port: PORT 
+    res.status(200).json({
+        status: 'healthy',
+        message: 'Server is healthy',
+        port: PORT
     });
 });
 
 
-server.listen(PORT, async() => {
+server.listen(PORT, async () => {
     console.log(`server listening on port ${PORT}`);
 
     try {
@@ -400,7 +470,7 @@ server.listen(PORT, async() => {
     } catch (error) {
         console.error('Error fetching JSON response from /health:', error);
     }
-    
+
     // const socket = ioClient(`http://localhost:${PORT}`);//testing web socket connection for learning purpose
     // socket.on('connect', () => {
     //     console.log('Client connected to server');

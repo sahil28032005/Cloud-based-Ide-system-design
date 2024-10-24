@@ -10,11 +10,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "aws-sdk": "^2.1691.0",
     "axios": "^1.7.5",
     "chokidar": "^3.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "mime": "^4.0.4",
     "node-pty": "^1.0.0",
     "nodemon": "^3.1.4",
     "react-quill": "^2.0.0",
