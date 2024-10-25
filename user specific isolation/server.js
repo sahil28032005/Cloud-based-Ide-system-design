@@ -112,7 +112,7 @@ io.on('connection', (socket) => {
             console.log(`Directory created for user ${userId} at ${userWorkspaceDir}`);
 
             //here user needs to be mapped with his workspace which is newly created using same helper function as used in else part
-            // setupUserConnection(socket, userId, userWorkspaceDir); //no need because after folder generation user must login and create repository and then connect
+            setupUserConnection(socket, userId, userWorkspaceDir); //no need because after folder generation user must login and create repository and then connect
 
         }
         else {
@@ -216,6 +216,7 @@ function setupUserConnection(socket, userId, userWorkspaceDir) {
     ptyProcess.on('data', function (data) {
         console.log(data);
         io.emit('terminal:data', data);
+        console.log("response sent to all connected socket clients");
     });
 
     //restrictor function for users who try entering unnecessary commsnds or folder tatrversals

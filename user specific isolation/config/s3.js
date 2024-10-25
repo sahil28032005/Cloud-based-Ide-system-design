@@ -1,38 +1,31 @@
-const AWS = require('aws-sdk');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 require('dotenv').config()
-//configuratinons
-AWS.config.update(
-    {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Store these in your environment variables
+
+
+
+const s3 = new  S3Client({
+    region: process.env.AWS_REGION, // e.g., 'us-east-1'
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        region: process.env.AWS_REGION, // e.g., 'us-west-2'
-    }
-);
+    },
+});
 
-const s3 = new AWS.S3();
-
-
-//presigned url generator fuction
-const generatePresignnedUrls = (bucketName, fileName, fileType, expiresIn = 60) => {
-    //prrams setuo
-    const params = {
+// Function to generate a presigned URL
+const generatePresignedUrl = async (bucketName, fileName, fileType, expiresIn = 60) => {
+    // Setup the command
+    const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: fileName,
-        Expires: expiresIn,
-        ContentType: fileType
-    }
+        ContentType: fileType,
+    });
 
-    return new Promise((Route53Resolver, reject) => {
-        s3.getSignedUrl('putObject', params, (err, url) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(url);
-        });
-    })
-
-}
+    // Generate and return the presigned URL
+    return await getSignedUrl(s3, command, { expiresIn });
+};
 
 module.exports = {
-    s3, generatePresignnedUrls
+    s3,
+    generatePresignedUrl,
 };
