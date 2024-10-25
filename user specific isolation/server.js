@@ -7,10 +7,12 @@ const cors = require('cors');
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
+const mime = require('mime-types');
 const app = express();
 const chokidar = require('chokidar');
 require('dotenv').config();
 const { exec } = require('child_process');
+const {s3,generatePresignedUrl}=require('./config/s3');
 app.use(cors());
 const server = http.createServer(app);
 // console.log(server); logs testing
@@ -77,7 +79,7 @@ io.on('connection', (socket) => {
     console.log("some user connected to centralized docker server", socket.id);
     //receive user soecific unique identifier for mappin to his specific follder
     const userId = socket.handshake.query.userId;
-
+    const replId = socket.handshake.query.replId;
     if (!userId) {
         //herer idea is to run shelll script as we got our new user first time
         console.log("user id not arrived,generating new user ID....");
@@ -101,7 +103,9 @@ io.on('connection', (socket) => {
     else {
         //this code works by considering server is currently on otherwise this won't work as expected
         console.log("insdie else part");
-        const userWorkspaceDir = path.join(__dirname, 'workspaces', userId);
+        // const userWorkspaceDir = path.join(__dirname, 'workspaces', userId);
+        const userWorkspaceDir = path.join(__dirname, 'workspaces', userId, replId);
+
 
         //check weather path sync exists or not
         if (!fs.existsSync(userWorkspaceDir)) {
@@ -112,12 +116,12 @@ io.on('connection', (socket) => {
             console.log(`Directory created for user ${userId} at ${userWorkspaceDir}`);
 
             //here user needs to be mapped with his workspace which is newly created using same helper function as used in else part
-            setupUserConnection(socket, userId, userWorkspaceDir); //no need because after folder generation user must login and create repository and then connect
+            setupUserConnection(socket, userId, userWorkspaceDir,replId); //no need because after folder generation user must login and create repository and then connect
 
         }
         else {
             console.log(`Directory already exists for user ${userId}`);
-            setupUserConnection(socket, userId, userWorkspaceDir);
+            setupUserConnection(socket, userId, userWorkspaceDir,replId);
         }
 
     }
@@ -199,7 +203,7 @@ io.on('connection', (socket) => {
 
 
 //making seperate connection file for user manageent
-function setupUserConnection(socket, userId, userWorkspaceDir) {
+function setupUserConnection(socket, userId, userWorkspaceDir,replId) {
     socket.userId = userId;
     console.log(`Handling connection for user ID: ${userId}`);
     emitFileStructure(userWorkspaceDir);
@@ -285,12 +289,12 @@ function setupUserConnection(socket, userId, userWorkspaceDir) {
         console.log("User disconnected");
 
         //here try ti write s3 push logic start uploading
-        await uploadDirectoryToS3(userWorkspace, userId);
+        await uploadDirectoryToS3(userWorkspaceDir, userId,replId);
 
     });
 }
 //for uploading directory to s3 bucket
-async function uploadDirectoryToS3(directory, userId) {
+async function uploadDirectoryToS3(directory, userId,replId) {
     try {
         //gett all file frim workspace
         const files = fs.readdirSync(directory);
@@ -301,20 +305,21 @@ async function uploadDirectoryToS3(directory, userId) {
         //iterate over files
 
         for (const file of files) {
-            const filePath = path.join(userWorkspaceDir, file);
+            const filePath = path.join(directory, file);
 
             //check weather it is file ot directory
 
             if (fs.statSync(filePath).isDirectory()) {
                 //thi is dir call recursively
-                await uploadDirectoryToS3(filePath, userId);
+                await uploadDirectoryToS3(filePath, userId,replId);
             }
             else {
-                const fileType = mime.getType(filePath);
-                //generate key according to s3 format returns Main.java as key
-                const key = path.relative(directory, filePath).replace(/\\/g, '/');
+                const fileType = mime.lookup(filePath);
+                // Generate key including userId, replId, and the relative path to the file
+                const relativePath = path.relative(path.join(__dirname, 'workspaces', userId, replId), filePath).replace(/\\/g, '/');
+                const key = `${userId}/${replId}/${relativePath}`; // Key structure: userId/replId/path/to/file
                 //now generate presigned url
-                const url = await generatePresignnedUrls(process.env.S3_BUCKET_NAME, `${userId}/${key}`,fileType);
+                const url = await generatePresignedUrl(process.env.S3_BUCKET_NAME, `${key}`, fileType);
                 //read the file content
                 const fileData = fs.readFileSync(filePath);
 

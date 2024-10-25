@@ -41,5 +41,5 @@ RUN npm rebuild
 
 # Start your Node.js or Java application
 # CMD ["node", "server.js"]
-CMD ["./entrypoint.sh", "user"]
+CMD ["./entrypoint.sh"]
 
