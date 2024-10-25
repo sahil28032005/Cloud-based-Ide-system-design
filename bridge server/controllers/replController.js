@@ -369,7 +369,7 @@ const startDockerContainer = async (req, res, repl) => {
         //server side config after amazon aws integrations
         const params = {
             cluster: 'cloud-manager-cluster', // Your ECS cluster name
-            taskDefinition: 'sahil-sadekar-java-server:9', // The task definition name
+            taskDefinition: 'sahil-sadekar-java-server:10', // The task definition name
             launchType: 'FARGATE', // Choose 'FARGATE' or 'EC2'
             networkConfiguration: {
                 awsvpcConfiguration: {
