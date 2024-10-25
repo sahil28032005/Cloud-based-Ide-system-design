@@ -1,6 +1,6 @@
 const Repl = require('../models//repl');
 // const AWS = require('aws-sdk'); ///remeber to unistall this
-const { ECSClient, RunTaskCommand ,ExecuteCommandCommand } = require("@aws-sdk/client-ecs");
+const { ECSClient, RunTaskCommand, ExecuteCommandCommand } = require("@aws-sdk/client-ecs");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Docker = require('dockerode');
 const s3Client = require('../config/s3config');
@@ -284,7 +284,7 @@ const startDockerContainerEcs = async (repl) => {
         console.log('Pre-signed URL:', accessUris);
         const params = {
             cluster: 'cloud-manager-cluster', // Your ECS cluster name
-            taskDefinition: 'sahil-sadekar-java-server:8', // The task definition name
+            taskDefinition: 'sahil-sadekar-java-server:12', // The task definition name
             launchType: 'FARGATE', // Choose 'FARGATE' or 'EC2'
             networkConfiguration: {
                 awsvpcConfiguration: {
@@ -338,6 +338,7 @@ const startDockerContainer = async (req, res, repl) => {
     try {
         // Construct path to the user's workspace directory
         const userWorkspaceDir = path.join(USER_DATA_DIR, repl.owner.toString());
+        console.log("while spin", repl.owner.toString());
         //local side configs
         // Here we have repl access of newly created repl by user
         // const container = await docker.createContainer({
@@ -369,7 +370,7 @@ const startDockerContainer = async (req, res, repl) => {
         //server side config after amazon aws integrations
         const params = {
             cluster: 'cloud-manager-cluster', // Your ECS cluster name
-            taskDefinition: 'sahil-sadekar-java-server:10', // The task definition name
+            taskDefinition: 'sahil-sadekar-java-server:13', // The task definition name
             launchType: 'FARGATE', // Choose 'FARGATE' or 'EC2'
             networkConfiguration: {
                 awsvpcConfiguration: {
@@ -382,8 +383,16 @@ const startDockerContainer = async (req, res, repl) => {
                 containerOverrides: [
                     {
                         name: 'java-container', // Replace with your container name from the task definition
-                        command: [],
-                        
+                        environment: [
+                            {
+                                name: 'REPL_OWNER',
+                                value: String(repl.owner)  // Pass userId from the environment variable
+                            },
+                            {
+                                name: 'REPL_UNIQUE_ID',
+                                value: String(repl._id)  // Pass `REPL_ID` from environment
+                            }
+                        ]
                     },
                 ],
             },
