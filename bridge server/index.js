@@ -6,6 +6,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
 const bcrypt = require('bcrypt');
+const redisClient=require('./config/redis');
 var jwt = require('jsonwebtoken');
 
 app.use(cors({
