@@ -12,7 +12,7 @@ const app = express();
 const chokidar = require('chokidar');
 require('dotenv').config();
 const { exec } = require('child_process');
-const {s3,generatePresignedUrl}=require('./config/s3');
+const { s3, generatePresignedUrl } = require('./config/s3');
 app.use(cors());
 const server = http.createServer(app);
 // console.log(server); logs testing
@@ -104,7 +104,8 @@ io.on('connection', (socket) => {
         //this code works by considering server is currently on otherwise this won't work as expected
         console.log("insdie else part");
         // const userWorkspaceDir = path.join(__dirname, 'workspaces', userId);
-        const userWorkspaceDir = path.join(__dirname, 'workspaces', userId, replId);
+        // const userWorkspaceDir = path.join(__dirname, 'workspaces', userId, replId);
+        const userWorkspaceDir = path.join(__dirname, 'workspaces');
 
 
         //check weather path sync exists or not
@@ -116,12 +117,12 @@ io.on('connection', (socket) => {
             console.log(`Directory created for user ${userId} at ${userWorkspaceDir}`);
 
             //here user needs to be mapped with his workspace which is newly created using same helper function as used in else part
-            setupUserConnection(socket, userId, userWorkspaceDir,replId); //no need because after folder generation user must login and create repository and then connect
+            setupUserConnection(socket, userId, userWorkspaceDir, replId); //no need because after folder generation user must login and create repository and then connect
 
         }
         else {
             console.log(`Directory already exists for user ${userId}`);
-            setupUserConnection(socket, userId, userWorkspaceDir,replId);
+            setupUserConnection(socket, userId, userWorkspaceDir, replId);
         }
 
     }
@@ -203,7 +204,7 @@ io.on('connection', (socket) => {
 
 
 //making seperate connection file for user manageent
-function setupUserConnection(socket, userId, userWorkspaceDir,replId) {
+function setupUserConnection(socket, userId, userWorkspaceDir, replId) {
     socket.userId = userId;
     console.log(`Handling connection for user ID: ${userId}`);
     emitFileStructure(userWorkspaceDir);
@@ -289,12 +290,12 @@ function setupUserConnection(socket, userId, userWorkspaceDir,replId) {
         console.log("User disconnected");
 
         //here try ti write s3 push logic start uploading
-        await uploadDirectoryToS3(userWorkspaceDir, userId,replId);
+        await uploadDirectoryToS3(userWorkspaceDir, userId, replId);
 
     });
 }
 //for uploading directory to s3 bucket
-async function uploadDirectoryToS3(directory, userId,replId) {
+async function uploadDirectoryToS3(directory, userId, replId) {
     try {
         //gett all file frim workspace
         const files = fs.readdirSync(directory);
@@ -311,16 +312,24 @@ async function uploadDirectoryToS3(directory, userId,replId) {
 
             if (fs.statSync(filePath).isDirectory()) {
                 //thi is dir call recursively
-                await uploadDirectoryToS3(filePath, userId,replId);
+                await uploadDirectoryToS3(filePath, userId, replId);
             }
             else {
                 const fileType = mime.lookup(filePath);
                 // Generate key including userId, replId, and the relative path to the file
-                const relativePath = path.relative(path.join(__dirname, 'workspaces', userId, replId), filePath).replace(/\\/g, '/');
-                const key = `${userId}/${replId}/${relativePath}`; // Key structure: userId/replId/path/to/file
+                const relativePath = path.relative(path.join(__dirname, 'workspaces', userId), filePath).replace(/\\/g, '/');
+                 // Remove any parent directory references (if any) from relativePath
+                 const sanitizedRelativePath = relativePath.split('/').filter(part => part !== '..').join('/');
+                
+                 const key = `${userId}/${replId}/${sanitizedRelativePath}`; // Key structure: userId/replId/path/to/file
+ // Key structure: userId/replId/path/to/file
+
+                console.log("key is", key);
                 //now generate presigned url
                 const url = await generatePresignedUrl(process.env.S3_BUCKET_NAME, `${key}`, fileType);
+                console.log(`generated presigned url for image ${file} is ${url}`);
                 //read the file content
+                console.log("current filepath is ", filePath);
                 const fileData = fs.readFileSync(filePath);
 
                 //upload using presigned url
@@ -344,6 +353,7 @@ async function uploadDirectoryToS3(directory, userId,replId) {
 
 async function uploadFileToS3(url, fileData) {
     try {
+        console.log("arrived at uploader function");
         const response = await fetch(url, {
             method: 'PUT',
             headers: {
@@ -357,7 +367,7 @@ async function uploadFileToS3(url, fileData) {
         }
     }
     catch (err) {
-        console.error('error for file upload...', err);
+        console.error('error for file upload...', err.message);
     }
 }
 //try to make initial get request which gets files in users own space

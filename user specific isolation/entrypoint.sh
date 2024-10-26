@@ -5,11 +5,12 @@ S3_BUCKET="base-templates-by-sahil2005"
 S3_PATH="java/"
 
 # Environment variables for creating userId and replId based folders
-USER_ID=${REPL_OWNER:-default_user}
-REPL_ID=${REPL_UNIQUE_ID:-default_repl}
+# USER_ID=${REPL_OWNER:-default_user}
+# REPL_ID=${REPL_UNIQUE_ID:-default_repl}
 
 # Define the target directory with nested structure
-TARGET_DIR="/usr/src/app/workspaces/$USER_ID/$REPL_ID"
+# TARGET_DIR="/usr/src/app/workspaces/$USER_ID/$REPL_ID"
+TARGET_DIR="/usr/src/app/workspaces"
 
 # Create the target directory
 mkdir -p "$TARGET_DIR"
