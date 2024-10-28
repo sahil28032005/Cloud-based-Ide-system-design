@@ -3,7 +3,7 @@ import Redis from 'ioredis';
 
 // Create Redis client and log connection
 const redis = new Redis({
-    host: 'redis-16822.c264.ap-south-1-1.ec2.redns.redis-cloud.com',
+    host: '',
     port: 16822,
     password: '',
 });
@@ -18,24 +18,29 @@ redis.on('error', (err) => {
 });
 
 const ecsClient = new ECSClient();
+
 const CLUSTER_NAME = 'cloud-manager-cluster';
 const IDLE_TASK_COUNT = 5;
 
-// Track container state and allocation status
 const trackContainerState = async (containerId, state) => {
     console.log(`Tracking container state: ${containerId} -> ${state}`);
-    await redis.hset(`container:${containerId}`, 'state', state, 'allocated', 'unallocated');
+    await redis.hset('containers', containerId, state);
+};
+
+const getContainerStates = async () => {
+    console.log('Fetching all container states from Redis');
+    return await redis.hgetall('containers');
 };
 
 const stopIdleContainers = async () => {
     console.log('Checking for idle containers to stop');
-    const containerStates = await redis.hgetall('containers');
+    const containerStates = await getContainerStates();
 
     for (const [id, state] of Object.entries(containerStates)) {
         if (state === 'idle') {
             console.log(`Stopping idle container: ${id}`);
             const stopTaskCommand = new StopTaskCommand({
-                cluster: CLUSTER_NAME,
+                cluster: 'cloud-manager-cluster',
                 task: id,
                 reason: 'Stopping idle container',
             });
@@ -48,7 +53,7 @@ const stopIdleContainers = async () => {
 const runNewTasks = async () => {
     console.log('Listing currently running tasks');
     const listTasksCommand = new ListTasksCommand({
-        cluster: CLUSTER_NAME,
+        cluster: 'cloud-manager-cluster',
         desiredStatus: 'RUNNING',
     });
     const { taskArns } = await ecsClient.send(listTasksCommand);
@@ -63,7 +68,7 @@ const runNewTasks = async () => {
         console.log(`Starting ${idleTaskCount} new idle tasks to maintain minimum count`);
         for (let i = 0; i < idleTaskCount; i++) {
             const runTaskCommand = new RunTaskCommand({
-                cluster: CLUSTER_NAME,
+                cluster: 'cloud-manager-cluster',
                 taskDefinition: 'sahil-sadekar-java-server:14',
                 count: 1,
                 launchType: 'FARGATE',
@@ -84,21 +89,7 @@ const runNewTasks = async () => {
     }
 };
 
-export const handler = async (event) => {
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    
-    const taskDetails = event.detail; // Capture task details from the event
-    const taskId = taskDetails.taskArn.split('/').pop(); // Extract task ID
-    const desiredStatus = taskDetails.desiredStatus; // 'RUNNING', 'STOPPED', etc.
-
-    try {
-        // Update the Redis state based on the task's desired status
-        await trackContainerState(taskId, desiredStatus);
-        console.log(`Updated Redis: Container ${taskId} is now ${desiredStatus}`);
-    } catch (err) {
-        console.error('Error updating Redis:', err);
-    }
-
+export const handler = async () => {
     console.log('Executing container management handler');
     await stopIdleContainers();
     await runNewTasks();
