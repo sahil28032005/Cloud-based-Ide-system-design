@@ -9,6 +9,10 @@ const bcrypt = require('bcrypt');
 const redisClient=require('./config/redis');
 var jwt = require('jsonwebtoken');
 
+//suoerGlobals
+const CHANNEL_NAME = 'container_updates';
+
+
 app.use(cors({
     origin: 'http://localhost:5173', // Update this to your frontend's URL
     credentials: true, // Allow credentials (e.g., cookies, authorization headers)
@@ -31,6 +35,15 @@ app.use(passport.session());
 
 
 connectDB();
+
+//suscribbe to reddis event listener channel for getting real time updates
+redisClient.subscribe(CHANNEL_NAME, (error, count) => {
+    if (error) {
+        console.error('Failed to subscribe to channel:', error);
+    } else {
+        console.log(`Subscribed to ${CHANNEL_NAME}. Currently subscribed to ${count} channel(s).`);
+    }
+});
 //define routes here
 app.use('/api/users', userRoutes);  // User routes
 app.use('/api/repls', replRoutes);   // Repl routes
@@ -115,6 +128,22 @@ app.get('/auth/google/callback',
         const redirectUrl = `http://localhost:5173/auth/callback?token=${token}&userId=${req.user._id}&username=${req.user.username}&email=${req.user.email}&avatar=${req.user.avatar}`;
         res.redirect(redirectUrl); // Redirecting with query params
     });
+
+// Handle incoming messages from the channel
+redisClient.on('message', (channel, message) => {
+    if (channel === CHANNEL_NAME) {
+        const update = JSON.parse(message);
+        console.log('Received container update:', update);
+
+        // Example of handling the update
+        const { containerId, state, allocated, taskArn, publicIp } = update;
+
+        // Process the container update (e.g., update NGINX configuration, log info, etc.)
+        console.log(`Container ID: ${containerId}, State: ${state}, Allocation: ${allocated}, Task ARN: ${taskArn}, Public IP: ${publicIp}`);
+
+        // Here, you can add code to update NGINX or other services
+    }
+});
 
 //server starter code
 app.listen(PORT, () => {
