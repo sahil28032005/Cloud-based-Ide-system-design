@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/u
 import { TooltipProvider, Tooltip } from '@/components/ui/tooltip'; // Import TooltipProvider
 import Navbar from './Navbar';
 import './Repos.css';
+import { io } from 'socket.io-client';
 
 // Typing Animation Component
 const TypingAnimation = ({ text, speed }) => {
@@ -56,18 +57,54 @@ const Repos = () => {
         fetchRepos();
     }, [userId]);
 
-    const handleRepoClick = async (replId, userId) => {
+    // const handleRepoClick = async (replId, userId) => {
+    //     try {
+    //         const response = await axios.post(`http://localhost:5002/api/repls/connect-container/${replId}/${userId}`);
+    //         if (response.data.success) {
+    //             navigate(`/?userId=${userId}&replId=${replId}`);
+    //         } else {
+    //             console.error('Failed to connect to the container:', response.data.message);
+    //         }
+    //     } catch (err) {
+    //         console.error('Error connecting to container:', err);
+    //     }
+    // };
+
+    //for hosted env test
+    const handleRepoClick = (replId, userId) => {
         try {
-            const response = await axios.post(`http://localhost:5002/api/repls/connect-container/${replId}/${userId}`);
-            if (response.data.success) {
+            console.log('onclick socket io');
+            //inttializing socket \.io connection request
+            const socket = io('http://13.233.131.207/ide_containers', {
+                transports: ['websocket'], // Prioritize WebSocket transport
+                query: {
+                    userId: '66f685b094428e0dc5d62683',
+                    replId: '123'
+                }
+            });
+            
+            
+            // Listen for connection success
+            socket.on('connect', () => {
+                console.log('Successfully connected to the container');
+                // Navigate to the target URL once connected
                 navigate(`/?userId=${userId}&replId=${replId}`);
-            } else {
-                console.error('Failed to connect to the container:', response.data.message);
-            }
-        } catch (err) {
-            console.error('Error connecting to container:', err);
+            });
+
+            // Handle connection errors
+            socket.on('connect_error', (err) => {
+                console.error('Connection error:', err);
+            });
+
+            // Optional: Handle disconnect events
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+            });
         }
-    };
+        catch (err) {
+            console.error('Error connecting to container:', err.message);
+        }
+    }
 
     const handleCreateRepo = async () => {
         if (!newRepoName || !selectedLanguage) return;
