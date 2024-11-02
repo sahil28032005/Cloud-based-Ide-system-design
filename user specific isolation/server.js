@@ -17,6 +17,7 @@ app.use(cors());
 const server = http.createServer(app);
 // console.log(server); logs testing
 const io = socketIo(server, {
+    path: '/ide_containers' ,
     cors: {
         origin: "*", // or '*' to allow all origins
         methods: ["GET", "POST"],

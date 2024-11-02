@@ -45,7 +45,7 @@ const Repos = () => {
     useEffect(() => {
         const fetchRepos = async () => {
             try {
-                const response = await axios.get(`http://localhost:5002/api/repls/${userId}/repos`);
+                const response = await axios.get(`http://13.233.131.207/api/repls/${userId}/repos`);
                 setRepos(response.data);
             } catch (err) {
                 setError('Error fetching repositories');
@@ -75,7 +75,7 @@ const Repos = () => {
         try {
             console.log('onclick socket io');
             // Initialize socket.io connection request
-            const socket = io('', {
+            const socket = io('http://13.233.131.207/ide_containers', {
                 query: {
                     userId: '66f685b094428e0dc5d62683',
                     replId: '67052b132cccd2774d0b9178'
@@ -83,7 +83,7 @@ const Repos = () => {
                 transports: ['websocket', 'polling'], // Specify transport methods
                 // autoConnect: false // Set to false to manually connect
             });
-            ;
+            
             
     
             // Listen for connection success
@@ -95,7 +95,7 @@ const Repos = () => {
     
             // Handle connection errors
             socket.on('connect_error', (err) => {
-                console.error('Connection error:', err);
+                console.error('Connection error:', err.message);
             });
     
             // Optional: Handle disconnect events
