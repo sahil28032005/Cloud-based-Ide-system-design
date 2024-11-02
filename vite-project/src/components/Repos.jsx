@@ -74,38 +74,40 @@ const Repos = () => {
     const handleRepoClick = (replId, userId) => {
         try {
             console.log('onclick socket io');
-            //inttializing socket \.io connection request
-            const socket = io('http://13.233.131.207/ide_containers', {
-                transports: ['websocket'], // Prioritize WebSocket transport
+            // Initialize socket.io connection request
+            const socket = io('', {
                 query: {
                     userId: '66f685b094428e0dc5d62683',
-                    replId: '123'
-                }
+                    replId: '67052b132cccd2774d0b9178'
+                },
+                transports: ['websocket', 'polling'], // Specify transport methods
+                // autoConnect: false // Set to false to manually connect
             });
+            ;
             
-            
+    
             // Listen for connection success
             socket.on('connect', () => {
                 console.log('Successfully connected to the container');
                 // Navigate to the target URL once connected
                 navigate(`/?userId=${userId}&replId=${replId}`);
             });
-
+    
             // Handle connection errors
             socket.on('connect_error', (err) => {
                 console.error('Connection error:', err);
             });
-
+    
             // Optional: Handle disconnect events
             socket.on('disconnect', () => {
                 console.log('Disconnected from server');
             });
-        }
-        catch (err) {
+    
+        } catch (err) {
             console.error('Error connecting to container:', err.message);
         }
-    }
-
+    };
+    
     const handleCreateRepo = async () => {
         if (!newRepoName || !selectedLanguage) return;
         try {
