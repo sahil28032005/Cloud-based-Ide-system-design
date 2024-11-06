@@ -45,7 +45,7 @@ const Repos = () => {
     useEffect(() => {
         const fetchRepos = async () => {
             try {
-                const response = await axios.get(`http://13.233.131.207/api/repls/${userId}/repos`);
+                const response = await axios.get(`http://localhost:5002/api/repls/${userId}/repos`);
                 setRepos(response.data);
             } catch (err) {
                 setError('Error fetching repositories');
@@ -75,39 +75,40 @@ const Repos = () => {
         try {
             console.log('onclick socket io');
             // Initialize socket.io connection request
-            const socket = io('http://13.233.131.207/ide_containers', {
-                query: {
-                    userId: '66f685b094428e0dc5d62683',
-                    replId: '67052b132cccd2774d0b9178'
-                },
-                transports: ['websocket', 'polling'], // Specify transport methods
-                // autoConnect: false // Set to false to manually connect
-            });
-            
-            
-    
+            // const socket = io('http://13.233.131.207', {
+            //     path: '/ide_containers',
+            //     query: {
+            //         userId: '66f685b094428e0dc5d62683'
+            //     },
+            //     transports: ['websocket', 'polling'], // Specify transport methods
+            //     // autoConnect: false // Set to false to manually connect
+            // });
+
+
+
             // Listen for connection success
-            socket.on('connect', () => {
-                console.log('Successfully connected to the container');
+            // socket.on('connect', () => {
+            //     console.log('Successfully connected to the container');
                 // Navigate to the target URL once connected
-                navigate(`/?userId=${userId}&replId=${replId}`);
-            });
-    
+                // navigate(`/?userId=${userId}&replId=${replId}`);
+                navigate(`/?userId=${userId}`);
+            // });
+
             // Handle connection errors
-            socket.on('connect_error', (err) => {
-                console.error('Connection error:', err.message);
-            });
-    
-            // Optional: Handle disconnect events
-            socket.on('disconnect', () => {
-                console.log('Disconnected from server');
-            });
-    
+            // socket.on('connect_error', (err) => {
+            //     console.error('Connection error:', err.message);
+            // });
+
+            // // Optional: Handle disconnect events
+            // socket.on('disconnect', () => {
+            //     console.log('Disconnected from server');
+            // });
+
         } catch (err) {
             console.error('Error connecting to container:', err.message);
         }
     };
-    
+
     const handleCreateRepo = async () => {
         if (!newRepoName || !selectedLanguage) return;
         try {

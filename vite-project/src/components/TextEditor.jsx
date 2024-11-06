@@ -33,7 +33,7 @@ const TextEditor = ({ filePath }) => {
     // File selection data retrieval
     useEffect(() => {
         if (filePath) {
-            axios.get('http://localhost:5000/read-file', { params: { filePath, userId } })
+            axios.get('http://13.233.131.207/ide_containers/read-file', { params: { filePath, userId } })
                 .then(response => setContent(response.data.content))
                 .catch(err => console.log("File reading error:", err.message));
         }

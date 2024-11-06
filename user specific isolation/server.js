@@ -17,14 +17,17 @@ app.use(cors());
 const server = http.createServer(app);
 // console.log(server); logs testing
 const io = socketIo(server, {
-    path: '/ide_containers' ,
+    allowEIO3: true,
+    path: '/ide_containers',
     cors: {
         origin: "*", // or '*' to allow all origins
         methods: ["GET", "POST"],
         allowedHeaders: ["my-custom-header"],
-        credentials: true
-    }
+        credentials: true,
+    },
+    transports: ['websocket', 'polling'] //latest change for testing manually through readers 
 });
+
 //middleware for extracting userId for anywhere use
 function extractUserId(req, res, next) {
     console.log("extraction middleware called");
@@ -319,11 +322,11 @@ async function uploadDirectoryToS3(directory, userId, replId) {
                 const fileType = mime.lookup(filePath);
                 // Generate key including userId, replId, and the relative path to the file
                 const relativePath = path.relative(path.join(__dirname, 'workspaces', userId), filePath).replace(/\\/g, '/');
-                 // Remove any parent directory references (if any) from relativePath
-                 const sanitizedRelativePath = relativePath.split('/').filter(part => part !== '..').join('/');
-                
-                 const key = `${userId}/${replId}/${sanitizedRelativePath}`; // Key structure: userId/replId/path/to/file
- // Key structure: userId/replId/path/to/file
+                // Remove any parent directory references (if any) from relativePath
+                const sanitizedRelativePath = relativePath.split('/').filter(part => part !== '..').join('/');
+
+                const key = `${userId}/${replId}/${sanitizedRelativePath}`; // Key structure: userId/replId/path/to/file
+                // Key structure: userId/replId/path/to/file
 
                 console.log("key is", key);
                 //now generate presigned url
@@ -395,7 +398,7 @@ app.get('/files', (req, res) => {
     const userId = req.query.userId;
     // console.log("uid",req.userId);
     console.log("inside getfiles", userId);
-    const userWorkspaceDir = path.join(__dirname, 'workspaces', userId);
+    const userWorkspaceDir = path.join(__dirname, 'workspaces');
     if (!fs.existsSync(userWorkspaceDir)) {
         return res.status(404).send('user directory not found');
     }
@@ -413,7 +416,7 @@ app.post('/write-file', extractUserId, (req, res) => {
         let { filePath, content } = req.body;
         console.log("writer path: " + filePath);
         filePath = filePath.trim();
-        const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
+        const fullPath = path.join(__dirname, 'workspaces', filePath);
         console.log("writer path: ", fullPath);
         console.log("made final write path as", fullPath);
         //write arrived content using fs writer module
@@ -444,7 +447,7 @@ app.get('/read-file', extractUserId, function (req, res) {
         console.log("inside readfile", req.userId);
         const { filePath } = req.query;
         console.log("arriven path: ", filePath);
-        const fullPath = path.join(__dirname, 'workspaces', req.userId, filePath);
+        const fullPath = path.join(__dirname, 'workspaces', filePath);
         console.log("full path: ", fullPath);
         fs.readFile(fullPath, 'utf8', (err, data) => {
             if (err) {

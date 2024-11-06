@@ -18,7 +18,7 @@ import { Card } from "@/components/ui/card"; // Import Shadcn card
 import './App.css'; // Your styles
 import './index.css'; // Global styles
 import AuthCallback from './components/AuthCallback';
-
+//checker node
 function App() {
     const [selectedFilePath, setSelectedFilePath] = useState('');
     const socketRef = useRef(null);
@@ -31,10 +31,13 @@ function App() {
     useEffect(() => {
         if (userId) {
             socketRef.current = io('http://localhost:5000', {
-                query: { userId: userId }
+                path: '/ide_containers',
+                query: { userId: userId },
+                transports: ['websocket', 'polling'],
             });
             socketRef.current.on('connect', () => {
                 setIsSocketReady(true);
+                console.log('success for connectionnnnnnnnnnnnnnn');
             });
 
             return () => {

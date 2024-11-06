@@ -11,18 +11,49 @@ const FileLister = ({ onSelect, socket }) => {
     const [expandedFolders, setExpandedFolders] = useState({});
     const pathStore = useRef('');
 
-    useEffect(() => {
-        if (socket && userId) {
-            fetch(`http://localhost:5000/files?userId=${userId}`)
-                .then(response => response.json())
-                .then(data => setFileTree(data))
-                .catch(err => console.error(err));
+    // useEffect(() => {
+    //     if (socket && userId) {
+    //         fetch(`http://13.233.131.207/ide_containers/files?userId=${userId}`)
+    //             .then(response => response.json())
+    //             .then(data => setFileTree(data))
+    //             .catch(err => console.error(err));
 
+    //         socket.on('file-structure-update', (updatedTree) => {
+    //             setFileTree(updatedTree);
+    //         });
+    //     }
+    // }, [socket, userId]);
+
+    useEffect(() => {
+        console.log("inside file lister useeffetc");
+        if (socket && userId) {
+            console.log("hitting fetch request for getting files and i have currently socket with userId");
+            console.log("sokxetref", socket);
+            fetch(`http://13.233.131.207/ide_containers/files?userId=${userId}`, {
+                method: 'GET',
+               
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => setFileTree(data))
+            .catch(err => console.error('Fetch error:', err.message));
+    
+            // Listening for file structure updates via WebSocket
             socket.on('file-structure-update', (updatedTree) => {
                 setFileTree(updatedTree);
             });
+    
+            // Clean up the socket listener when component unmounts or dependencies change
+            return () => {
+                socket.off('file-structure-update');
+            };
         }
     }, [socket, userId]);
+    
 
     const handleFileClick = (filePath) => {
         onSelect(filePath);
