@@ -5,9 +5,9 @@ import { EC2Client, DescribeNetworkInterfacesCommand } from '@aws-sdk/client-ec2
 
 // Create Redis client and log connection
 const redis = new Redis({
-    host: 'redis-16822.c264.ap-south-1-1.ec2.redns.redis-cloud.com',
-    port:16822,
-    password: 'yicgb9lJLSnO7SujSaGU6GD0E8wz3QQs', // Replace with your actual password
+    host: '',
+    port:'',
+    password: '', // Replace with your actual password
 });
 
 //define channel name for event calls
@@ -322,8 +322,8 @@ export const handler = async (event) => {
 
 // // Create Redis client and log connection
 // const redis = new Redis({
-//     host: 'redis-16822.c264.ap-south-1-1.ec2.redns.redis-cloud.com',
-//     port: 16822,
+//     host: '',
+//     port: ,
 //     password: '', // Replace with your actual password
 // });
 
