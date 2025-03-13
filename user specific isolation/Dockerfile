@@ -1,45 +1,45 @@
-FROM node:18
+FROM node:18-slim
 
-# Set the working directory in the container
+# Configure logging driver
+ENV DOCKER_LOG_DRIVER=json-file
+ENV DOCKER_LOG_OPT_MAX_SIZE=10m
+ENV DOCKER_LOG_OPT_MAX_FILE=3
+
 WORKDIR /usr/src/app
 
-# Install build dependencies (for Node.js and Java)
+# Add Python and other build dependencies
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
     build-essential \
+    python3 \
+    python3-pip \
     openjdk-17-jdk \
     unzip \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    tini \
+    && curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip -q awscliv2.zip \
+    && ./aws/install \
+    && rm -rf awscliv2.zip aws \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && ln -s /usr/bin/python3 /usr/bin/python
 
-# Install AWS CLI
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip
-
-
-# Copy package.json and package-lock.json (if available)
+# Copy package files and install dependencies
 COPY package*.json ./
+ENV PYTHON=/usr/bin/python3
+RUN npm install -g node-gyp && \
+    npm ci --only-production --quiet && \
+    npm install node-pty@latest --quiet
 
-# Install node-gyp globally (if needed)
-RUN npm install node-gyp
-
-# Install dependencies
-RUN npm install --no-cache
-
-# Install node-pty with the latest tag
-RUN npm install node-pty@latest
-
-# Expose the port that your app runs on
-EXPOSE 5000
-
-# Copy the rest of your application code
+COPY entrypoint.sh .
 COPY . .
 
-# Rebuild native modules
-RUN npm rebuild
+RUN chmod +x entrypoint.sh
+RUN npm rebuild --quiet
 
-# Start your Node.js or Java application
-# CMD ["node", "server.js"]
+EXPOSE 5000
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["./entrypoint.sh"]
 
