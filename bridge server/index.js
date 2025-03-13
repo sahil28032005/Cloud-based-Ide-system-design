@@ -28,7 +28,11 @@ const User = require('./models/user');
 
 //json data middleware
 app.use(express.json());
-app.use(session({ secret: "", resave: false, saveUninitialized: true }));
+app.use(session({ 
+    secret: process.env.JWT_SECRET,
+    resave: false, 
+    saveUninitialized: true 
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -51,9 +55,9 @@ app.use('/api/repls', replRoutes);   // Repl routes
 // app.use('/api/sessions', sessionRoutes);  // Session routes
 // Configure Google Strategy
 passport.use(new GoogleStrategy({
-    clientID: "",
-    clientSecret: "",
-    callbackURL: ""
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL
 },
     async (accessToken, refreshToken, profile, done) => {
         // Handle user profile info here (find or create user in DB)
